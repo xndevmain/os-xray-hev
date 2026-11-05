@@ -2,13 +2,26 @@
 <model>
     <mount>//OPNsense/xray/general</mount>
     <description>Xray General Settings</description>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
     <items>
+        <geodata_auto_update type="BooleanField"><Default>0</Default><Required>N</Required></geodata_auto_update>
+        <custom_domains type="TextField"><Required>N</Required></custom_domains>
+        <custom_hosts type="TextField"><Required>N</Required></custom_hosts>
+        <firewall_geosite type="TextField"><Required>N</Required></firewall_geosite>
+        <firewall_geoip type="TextField"><Required>N</Required></firewall_geoip>
+        <geosite_url type="TextField">
+            <Default>https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat</Default>
+            <Mask>/^https:\/\/[^\s]+$/</Mask><Required>Y</Required>
+        </geosite_url>
+        <geoip_url type="TextField">
+            <Default>https://github.com/v2fly/geoip/releases/latest/download/geoip.dat</Default>
+            <Mask>/^https:\/\/[^\s]+$/</Mask><Required>Y</Required>
+        </geoip_url>
         <enabled type="BooleanField">
             <default>0</default>
             <Required>N</Required>
         </enabled>
-        <!-- E1: watchdog — автоперезапуск через cron при падении xray-core или tun2socks -->
+        <!-- E1: watchdog — автоперезапуск через cron при падении xray-core или hev-socks5-tunnel -->
         <watchdog_enabled type="BooleanField">
             <default>0</default>
             <Required>N</Required>

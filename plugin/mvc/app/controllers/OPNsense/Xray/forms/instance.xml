@@ -1,38 +1,20 @@
 <form>
     <field>
-        <type>header</type>
-        <label>Instance</label>
-    </field>
-    <field>
-        <id>instance.enabled</id>
-        <label>Enabled</label>
-        <type>checkbox</type>
-        <help>Enable this instance. Disabled instances are skipped on start and reconfigure.</help>
-    </field>
-    <field>
         <id>instance.name</id>
         <label>Name</label>
         <type>text</type>
-        <help>Display name for this instance in the table</help>
+        <help>Display name for the tunnel</help>
         <hint>e.g. default, work, streaming</hint>
     </field>
     <field>
-        <id>instance.outbound_config</id>
-        <label>Outbound Config (JSON)</label>
-        <type>textbox</type>
-        <help>xray-core outbound object. Use "Import VLESS link" above to auto-fill, or paste/write the outbound JSON directly. The backend wraps it with SOCKS5 inbound and routing on save.</help>
-        <hint>{"tag":"proxy","protocol":"vless","settings":{...},"streamSettings":{...}}</hint>
-    </field>
-
-    <field>
-        <type>header</type>
-        <label>Tunnel (tun2socks)</label>
+        <type>subheader</type>
+        <label>Tunnel interface</label>
     </field>
     <field>
         <id>instance.socks5_listen</id>
         <label>SOCKS5 Listen Address</label>
         <type>text</type>
-        <help>IP address xray-core binds for its SOCKS5 inbound. tun2socks connects here to forward all TUN traffic through the proxy. Use 127.0.0.1 (loopback, recommended), 0.0.0.0 (all interfaces), or any IP assigned to a real OPNsense interface (e.g. 192.168.1.1). Other 127.x.x.x addresses require a manual lo0 alias on FreeBSD and are not recommended.</help>
+        <help>IP address xray-core binds for its SOCKS5 inbound. hev-socks5-tunnel connects here to forward all TUN traffic through the proxy. Use 127.0.0.1 (loopback, recommended), 0.0.0.0 (all interfaces), or any IP assigned to a real OPNsense interface (e.g. 192.168.1.1). Other 127.x.x.x addresses require a manual lo0 alias on FreeBSD and are not recommended.</help>
         <hint>e.g. 127.0.0.1 or 0.0.0.0</hint>
     </field>
     <field>
@@ -40,14 +22,14 @@
         <label>SOCKS5 Port</label>
         <type>text</type>
         <help>Local loopback port xray-core binds for SOCKS5 inbound</help>
-        <hint>Default: 10808. tun2socks connects here to forward TUN traffic. Must not be used by another process.</hint>
+        <hint>Default: 10808. hev-socks5-tunnel connects here to forward TUN traffic. Must not be used by another process.</hint>
     </field>
     <field>
         <id>instance.tun_interface</id>
         <label>TUN Interface</label>
         <type>text</type>
-        <help>Virtual network interface created by tun2socks</help>
-        <hint>Default: proxytun2socks0. Must match the name in Interfaces → Assignments.</hint>
+        <help>Virtual network interface created by hev-socks5-tunnel</help>
+        <hint>Default: proxyhev2socks0. Must match the name in Interfaces → Assignments.</hint>
     </field>
     <field>
         <id>instance.mtu</id>
@@ -56,17 +38,10 @@
         <help>Maximum Transmission Unit for the TUN interface</help>
         <hint>Default: 1500. Reduce to 1380 if large packets (e.g. SSH, large downloads) fail or are slow.</hint>
     </field>
-    <field>
-        <type>header</type>
-        <label>Routing</label>
-    </field>
-    <field>
-        <id>instance.bypass_networks</id>
-        <label>Bypass Networks</label>
-        <type>text</type>
-        <help>Comma-separated list of CIDR networks that should bypass the VPN tunnel and go direct. These networks will be routed via the 'direct' (freedom) outbound instead of the proxy.</help>
-        <hint>Default: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16. Add your own networks or IPs (e.g. 100.64.0.0/10,203.0.113.5/32)</hint>
-    </field>
+
+    <field><type>subheader</type><label>Proxy health checks</label></field>
+    <field><id>instance.probe_url</id><label>Health check HTTPS URL</label><type>text</type><help>Must be reachable through every proxy. Used by Xray Observatory and Test Connection.</help></field>
+    <field><id>instance.probe_interval</id><label>Probe interval (seconds)</label><type>text</type><help>Pool probes run in the background; switching waits for failed probes to finish.</help></field>
     <field>
         <id>instance.loglevel</id>
         <label>Xray Log Level</label>

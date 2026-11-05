@@ -1,0 +1,38 @@
+Release audit: 4.0.0-beta.1
+Status: audit pass for an experimental beta release; coverage limits below remain.
+
+Scope: API input/auth boundary, subscription identity/merge/rollback/concurrency,
+HTTPS retrieval, process lifecycle, DNS/PF routing, geodata updates, native UI,
+installer/removal, localization, documentation, CI and release archive hygiene.
+
+Fixed during this audit:
+- Subscription activation now shares the service-operation lock with manual actions,
+  avoiding a refresh restarting a tunnel concurrently stopped by the user.
+- Failed routing activation restores the learned-address SQLite snapshot as well as
+  configuration and the Unbound callback.
+- Geodata retention preserves current/active and the newest three releases.
+- Installer no longer downloads unchecked executables, exposes connection secrets,
+  uses predictable shell-import temporary files, or kills arbitrary PID-file targets.
+- Installation checks native models/Volt before replacement; legacy unsupported
+  schemas are explicitly rejected. Backups and file rollback are available.
+- Uninstall regenerates cron and removes all plugin scripts and localization.
+- CI uses hosted runners, read-only permissions and pinned official actions.
+- Source/release packaging uses an explicit allowlist and excludes local/private data.
+- Documentation describes the actual single-tunnel subscription architecture.
+- Integration caught and fixed a missing .inc archive component and duplicate PHP
+  include during cron regeneration. The failed upgrade exercised file rollback.
+
+Portable PHP/config/parser/catalog/downloader/refresh/retention tests and eight
+Python routing tests pass. Real Xray failover/all-dead/recovery tests pass.
+Native OPNsense model/Volt preflight, a fresh-model in-memory migration, installed
+upgrade, cron regeneration, a real concurrent-stop lock rejection and routing Apply
+passed. Isolated Unbound/PF tests passed for resolved/cached/local answers, IPv6 and
+HTTPS address hints. Native UI tests reproduced lazy-tab event loss and confirmed
+working endpoint/source buttons after the fix. The running tunnel remained up.
+The first installation attempt exposed two packaging/inclusion errors; file rollback
+preserved running services. Both errors were fixed and the repeated upgrade passed.
+
+Release classification: beta. Cold installation and full uninstall in a disposable
+OPNsense VM, full reboot recovery, and the LAN/TUN UDP/IPv6 matrix remain unverified.
+The production firewall is not used for destructive uninstall/reboot testing.
+These are explicit coverage limits; no claim of complete security is made.

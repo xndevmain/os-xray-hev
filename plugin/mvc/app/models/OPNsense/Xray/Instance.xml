@@ -5,9 +5,27 @@
     <!-- v3.0.0: ArrayField multi-instance + vless_uuid rename (breaking change от v2.x) -->
     <!-- Каждый инстанс получает уникальный UUID от OPNsense BaseModel. -->
     <!-- Миграция: install.sh конвертирует <instance> → <instances><instance uuid="...">, uuid → vless_uuid -->
-    <version>3.0.0</version>
+    <version>4.0.0</version>
     <items>
         <instance type="ArrayField">
+            <firewall_geosite type="TextField"><Required>N</Required></firewall_geosite>
+            <firewall_geoip type="TextField"><Required>N</Required></firewall_geoip>
+            <direct_domains type="TextField"><Required>N</Required></direct_domains>
+            <direct_ips type="TextField"><Required>N</Required></direct_ips>
+            <proxy_domains type="TextField"><Required>N</Required></proxy_domains>
+            <proxy_ips type="TextField"><Required>N</Required></proxy_ips>
+            <default_route type="OptionField">
+                <Default>proxy</Default>
+                <OptionValues><proxy>Proxy</proxy><direct>Direct</direct></OptionValues>
+            </default_route>
+            <probe_url type="TextField">
+                <Default>https://www.gstatic.com/generate_204</Default>
+                <Mask>/^https:\/\/[^\s]+$/</Mask>
+                <Required>Y</Required>
+            </probe_url>
+            <probe_interval type="IntegerField">
+                <Default>30</Default><MinimumValue>5</MinimumValue><MaximumValue>3600</MaximumValue><Required>Y</Required>
+            </probe_interval>
             <enabled type="BooleanField">
                 <Default>1</Default>
             </enabled>
@@ -33,10 +51,10 @@
             </socks5_port>
             <!-- BUG-6 FIX: валидация имени TUN-интерфейса предотвращает RCE -->
             <tun_interface type="TextField">
-                <Default>proxytun2socks0</Default>
+                <Default>proxyhev2socks0</Default>
                 <Required>Y</Required>
                 <Mask>/^[a-z][a-z0-9]{0,13}[0-9]$/</Mask>
-                <ValidationMessage>Interface name must start with a letter, end with a digit, contain only lowercase letters and digits, and be at most 15 characters (e.g. proxytun2socks0)</ValidationMessage>
+                <ValidationMessage>Interface name must start with a letter, end with a digit, contain only lowercase letters and digits, and be at most 15 characters (e.g. proxyhev2socks0)</ValidationMessage>
             </tun_interface>
             <mtu type="IntegerField">
                 <Default>1500</Default>

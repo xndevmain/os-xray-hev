@@ -1,0 +1,10 @@
+* text=auto
+*.php text eol=lf
+*.sh text eol=lf
+*.volt text eol=lf
+*.xml text eol=lf
+*.conf text eol=lf
+*.inc text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+plugin/etc/rc.syshook.d/start/* text eol=lf

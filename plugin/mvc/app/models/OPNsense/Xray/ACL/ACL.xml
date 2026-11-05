@@ -18,21 +18,42 @@
         <n>Xray: Service control</n>
         <description>Allow access to Xray service control (start, stop, reconfigure, status)</description>
         <patterns>
-            <pattern>api/xray/service/*</pattern>
+            <pattern>api/xray/service/geosites*</pattern>
+            <pattern>api/xray/service/firewallLists*</pattern>
+            <pattern>api/xray/service/cancelGeodata*</pattern>
+            <pattern>api/xray/service/geodata*</pattern>
+            <pattern>api/xray/service/reconfigure*</pattern>
+            <pattern>api/xray/service/status*</pattern>
+            <pattern>api/xray/service/statusAll*</pattern>
+            <pattern>api/xray/service/start*</pattern>
+            <pattern>api/xray/service/stop*</pattern>
+            <pattern>api/xray/service/restart*</pattern>
+            <pattern>api/xray/service/log*</pattern>
+            <pattern>api/xray/service/xraylog*</pattern>
+            <pattern>api/xray/service/validate*</pattern>
+            <pattern>api/xray/service/version*</pattern>
+            <pattern>api/xray/service/diagnostics*</pattern>
+            <pattern>api/xray/service/testconnect*</pattern>
+            <pattern>api/xray/service/testSite*</pattern>
         </patterns>
     </acl_xray_service>
+    <acl_xray_network>
+        <n>Xray: Network setup</n><description>Allow creating tunnel interfaces and policy routing rules.</description>
+        <patterns><pattern>api/xray/service/setupInterface</pattern><pattern>api/xray/service/setupRule</pattern></patterns>
+    </acl_xray_network>
     <acl_xray_import>
-        <n>Xray: Import VLESS link</n>
-        <description>Allow access to VLESS link parser (import/parse)</description>
+        <n>Xray: Import endpoints</n>
+        <description>Allow importing proxy links and subscriptions</description>
         <patterns>
             <pattern>api/xray/import/*</pattern>
         </patterns>
     </acl_xray_import>
     <acl_xray_ui>
         <n>Xray: Web UI</n>
-        <description>Allow access to the Xray management page (VPN → Xray)</description>
+        <description>Allow access to the Xray management page (VPN в†’ Xray)</description>
         <patterns>
             <pattern>ui/xray/*</pattern>
         </patterns>
     </acl_xray_ui>
+<acl_xray_catalog><n>Xray: Subscriptions and endpoints</n><description>Manage subscription credentials, selected endpoints and refreshes</description><patterns><pattern>api/xray/catalog/*</pattern></patterns></acl_xray_catalog>
 </acl>

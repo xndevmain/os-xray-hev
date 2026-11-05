@@ -1,9 +1,27 @@
+## 4.0.0-beta.1 — independent Hev/subscription fork
+
+Based on MrTheory/os-xray; original license and author attribution retained.
+Single Hev/Xray tunnel, managed subscriptions and persistent server selection,
+Unbound/PF routing lists, EN/RU native UI, safer lifecycle/rollback/downloads,
+installer preflight and allowlisted release packaging. See docs/PUBLIC-AUDIT.txt
+for verification scope and remaining beta limitations.
+
 # Changelog — os-xray
 
 All notable changes to this project will be documented in this file.
 Format: [Semantic Versioning](https://semver.org/).
 
 ---
+
+## [4.0.0-development] - 2026-11-04
+
+- Replace tun2socks with HevSocks5Tunnel across service control, boot, watchdog, diagnostics and installer.
+- Add proxy pools, background Observatory health checks and leastPing failover with blackhole fallback.
+- Import mixed VLESS/VMess/Trojan/Shadowsocks subscription files (plain text, Base64 and Base64URL) and test each proxy independently.
+- Fix duplicate instance import during upgrade and require .json filenames for temporary configs on the FreeBSD Xray build.
+- Add atomic community geosite/geoip imports, ITDog/Podkop preset and category validation.
+- Add Unbound DNS/cache callbacks, root PF broker, persistent TTL-aware aliases and GeoIP networks for user-owned firewall routing.
+- Add regression tests and real-Xray failover/recovery test; document pending OPNsense/FreeBSD integration checks.
 
 ## [3.0.1] - TBD
 ### Added
@@ -20,7 +38,7 @@ Format: [Semantic Versioning](https://semver.org/).
 ### Fixed
 - **No startup on reboot** — xray_configure использовал неверный формат для передачи функции запускаемой при bootup
 - **Actions xray argument passing** — исправлен неверный формат передачи опциональных аргументов
-- **Multi-instance interface assigment** — ip выдавался только proxytun2socks0 из-за того что всегда происходил fallback на имя по умолчанию
+- **Multi-instance interface assigment** — ip выдавался только proxyhev2socks0 из-за того что всегда происходил fallback на имя по умолчанию
 
 ## [3.0.0] — 2026-03-27
 

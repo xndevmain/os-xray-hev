@@ -1,0 +1,31 @@
+Security scope and known limitations
+
+This is a beta firewall plugin, not a security certification or a VPN kill switch.
+Only grant Xray configuration/subscription/network ACLs to trusted administrators.
+Subscription URLs, endpoint credentials and legacy rollback payloads are secrets in
+config.xml and its backups. Do not post them in issues, logs or screenshots.
+
+HTTPS subscription/geodata fetches require public IPs, TLS validation, bounded size
+and deadlines, and revalidate redirect targets with pinned DNS. Custom endpoint
+configuration is trusted network configuration: importing it is not a sandbox.
+Keep the unauthenticated SOCKS listener bound to loopback. A wildcard/LAN listener
+can expose proxy access to hosts allowed by the firewall.
+
+DNS-to-IP routing requires client queries to pass through Unbound. Client DoH/DoT,
+independent resolvers and already cached addresses can bypass learning. Shared CDN
+IPs can route unrelated domains. DNS TTL expiration and a PF reload can temporarily
+remove entries; periodic restoration is not an atomic firewall kill switch.
+
+A broker/PF error or a regex deadline does not guarantee suppression of the DNS
+response. Do not depend on this mechanism alone for leak prevention. Configure
+explicit firewall policies if unwanted direct traffic must always be blocked.
+Selected GeoIP networks may contain local/reserved ranges; review categories.
+
+A successful HTTPS proxy probe is not proof of UDP, IPv6 or the complete LAN/TUN
+path. Multi-proxy selection depends on health observations and is not instantaneous.
+All-dead blocking is tested inside Xray; it does not govern traffic bypassing TUN.
+
+Do not report secrets publicly. For a suspected vulnerability, contact the fork
+maintainer through GitHub's available private reporting/contact channel first.
+If no private channel is available, open a minimal issue without exploit secrets
+or router configuration to arrange a private report.

@@ -13,6 +13,37 @@ use OPNsense\Core\Backend;
  */
 class ServiceController extends ApiMutableServiceControllerBase
 {
+    public function geositesAction()
+    {
+        $rows = json_decode((new Backend())->configdRun('xray geosites'), true);
+        return ['categories' => $rows['geosite'] ?? [], 'geoip' => $rows['geoip'] ?? []];
+    }
+
+    public function firewallListsAction()
+    {
+        if (!$this->request->isPost()) return ['result' => 'failed', 'message' => 'POST required'];
+        $output = (new Backend())->configdRun('xray routingapply');
+        $data = json_decode(trim($output), true);
+        return is_array($data) ? $data : ['result' => 'failed', 'message' => 'No valid response from firewall list importer'];
+    }
+
+    public function cancelGeodataAction()
+    {
+        if (!$this->request->isPost()) return ['result' => 'failed', 'message' => 'POST required'];
+        return json_decode((new Backend())->configdRun('xray cancelgeodata'), true) ?: ['result' => 'failed', 'message' => 'Cancellation failed'];
+    }
+
+    public function geodataAction()
+    {
+        if (!$this->request->isPost()) {
+            return ['result' => 'failed', 'message' => 'POST required'];
+        }
+        session_write_close();
+        $output = (new Backend())->configdRun('xray geodata');
+        $data = json_decode(trim($output), true);
+        return is_array($data) ? $data : ['result' => 'failed', 'message' => 'No valid response from geodata importer'];
+    }
+
     protected static $internalServiceClass    = '\OPNsense\Xray\General';
     protected static $internalServiceTemplate = 'OPNsense/Xray';
     protected static $internalServiceEnabled  = 'enabled';
@@ -23,7 +54,10 @@ class ServiceController extends ApiMutableServiceControllerBase
      */
     private function sanitizeUuid(string $uuid): string
     {
-        return preg_replace('/[^0-9a-fA-F\-]/', '', $uuid);
+        if ($uuid !== '' && !preg_match('/^[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\z/', $uuid)) {
+            throw new \OPNsense\Base\UserException('Invalid instance UUID');
+        }
+        return $uuid;
     }
 
     /**
@@ -228,21 +262,86 @@ class ServiceController extends ApiMutableServiceControllerBase
         $backend = new Backend();
         $output  = trim($backend->configdRun($cmd));
 
-        $httpCode = (int)$output;
-        if ($httpCode >= 200 && $httpCode < 400) {
-            return [
-                'result'    => 'ok',
-                'http_code' => $httpCode,
-                'message'   => "OK ({$httpCode}) — connection works",
-            ];
+        $data = json_decode($output, true);
+        return is_array($data) ? $data : ['result' => 'failed', 'message' => 'No valid response from proxy test'];
+    }
+    public function setupInterfaceAction()
+    {
+        if (!$this->request->isPost()) return ['result'=>'failed', 'message'=>'POST required'];
+        $data = json_decode((new Backend())->configdRun('xray setupinterface'), true);
+        return is_array($data) ? $data : ['result'=>'failed', 'message'=>'No response from interface setup'];
+    }
+    public function testSiteAction()
+    {
+        if (!$this->request->isPost()) return ['result'=>'failed', 'message'=>'POST required'];
+        $value = trim((string)$this->request->getPost('host', 'string', ''));
+        if (str_contains($value, '://')) $value = (string)parse_url($value, PHP_URL_HOST);
+        // IDNA conversion happens in Python; PHP intl is optional on OPNsense.
+        $host = rtrim($value, '.');
+        if (!$host || strlen($host) > 1024 || !preg_match('/^[\p{L}\p{M}\p{N}.-]+$/uD', $host)) {
+            return ['result'=>'failed', 'message'=>'Enter a valid hostname or website URL'];
         }
-
-        return [
-            'result'    => 'failed',
-            'http_code' => $httpCode,
-            'message'   => $httpCode === 0
-                ? 'Could not connect — xray-core may be stopped or port unreachable'
-                : "HTTP {$httpCode} — unexpected response from 1.1.1.1",
-        ];
+        $data = json_decode((new Backend())->configdpRun('xray testsite', [strtolower($host)]), true);
+        return is_array($data) ? $data : ['result'=>'failed', 'message'=>'No response from site test'];
+    }
+    public function setupRuleAction()
+    {
+        if (!$this->request->isPost()) return ['result'=>'failed', 'message'=>'POST required'];
+        $config = \OPNsense\Core\Config::getInstance();
+        $config->lock();
+        try {
+            $root = $config->object();
+            $instances = $root->OPNsense->xray->instances->instance;
+            if (count($instances) !== 1) throw new \RuntimeException('Exactly one tunnel is required');
+            $device = (string)$instances[0]->tun_interface;
+            $assigned = '';
+            foreach ($root->interfaces->children() as $key=>$item) if ((string)$item->if === $device) $assigned = $key;
+            if (!$assigned || !isset($root->interfaces->lan)) throw new \RuntimeException('Configure the tunnel and LAN interfaces first');
+            $gateway = 'XRAY_' . strtoupper($assigned) . '_GW';
+            $found = false;
+            foreach ($root->OPNsense->Gateways->gateway_item ?? [] as $item) {
+                if ((string)$item->name === $gateway && (string)$item->interface === $assigned && (string)$item->disabled !== '1') $found = true;
+            }
+            if (!$found) throw new \RuntimeException('Create the tunnel gateway first');
+            $model = new \OPNsense\Firewall\Filter();
+            foreach ($model->rules->rule->iterateItems() as $item) {
+                if ((string)$item->interface === 'lan' && (string)$item->destination_net === 'XRAY_HOSTS' && (string)$item->gateway === $gateway) {
+                    return ['result'=>'failed','message'=>'The Xray LAN rule already exists. Review its order in Firewall Rules.'];
+                }
+            }
+            // Insert before the generic LAN allow rule, preserving earlier restrictions.
+            $position = 1;
+            $allowPosition = null;
+            foreach ($model->rules->rule->iterateItems() as $rule) {
+                $sequence = (int)(string)$rule->sequence;
+                $position = max($position, $sequence + 10);
+                if ((string)$rule->interface === 'lan' && (string)$rule->enabled === '1'
+                    && (string)$rule->action === 'pass' && (string)$rule->direction === 'in'
+                    && in_array((string)$rule->ipprotocol, ['inet', 'inet46'], true)
+                    && (string)$rule->source_net === 'lan' && (string)$rule->destination_net === 'any'
+                    && in_array((string)$rule->protocol, ['', 'any'], true)
+                    && in_array((string)$rule->destination_port, ['', 'any'], true)
+                    && in_array((string)$rule->source_port, ['', 'any'], true)
+                    && (string)$rule->source_not !== '1' && (string)$rule->destination_not !== '1') {
+                    $allowPosition = $allowPosition === null ? $sequence : min($allowPosition, $sequence);
+                }
+            }
+            if ($allowPosition !== null) {
+                $position = $allowPosition;
+                foreach ($model->rules->rule->iterateItems() as $rule) {
+                    if ((int)(string)$rule->sequence >= $position) $rule->sequence = (string)((int)(string)$rule->sequence + 10);
+                }
+            }
+            $item = $model->rules->rule->Add();
+            $item->setNodes(['sequence'=>(string)$position,'enabled'=>'1','action'=>'pass','quick'=>'1','interface'=>'lan',
+                'direction'=>'in','ipprotocol'=>'inet','source_net'=>'lan','destination_net'=>'XRAY_HOSTS',
+                'gateway'=>$gateway,'description'=>'Xray policy routing']);
+            foreach ($model->performValidation() as $error) throw new \RuntimeException((string)$error);
+            $model->serializeToConfig();
+            $config->save();
+            return ['result'=>'saved'];
+        } catch (\Throwable $error) {
+            return ['result'=>'failed','message'=>$error->getMessage()];
+        } finally { $config->unlock(); }
     }
 }

@@ -1,0 +1,409 @@
+# Russian (Russia) translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-11-05 01:26+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ru_RU\n"
+"Language-Team: ru_RU <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgid "Settings"
+msgstr "Настройки"
+
+msgid "Interface"
+msgstr "Интерфейс"
+
+msgid "Gateway"
+msgstr "Шлюз"
+
+msgid "Choose a category"
+msgstr "Выберите категорию"
+
+msgid "Category"
+msgstr "Категория"
+
+msgid "Remove category"
+msgstr "Удалить категорию"
+
+msgid "Add category"
+msgstr "Добавить категорию"
+
+msgid "OPNsense rejected the changes."
+msgstr "OPNsense отклонила изменения."
+
+msgid "OPNsense error: HTTP "
+msgstr "Ошибка OPNsense: HTTP "
+
+msgid "Assign tunnel interface "
+msgstr "Назначить TUN-интерфейс "
+
+msgid ""
+"Assignment saved. Apply it in Interfaces → Assignments, then enable the "
+"interface and configure a static address."
+msgstr ""
+"Назначение сохранено. Примените его в Interfaces → Assignments. Затем "
+"включите интерфейс и задайте статический адрес."
+
+msgid "Assign and configure the interface first."
+msgstr "Сначала назначьте и настройте интерфейс."
+
+msgid "Gateway IPv4 address for "
+msgstr "IPv4-адрес шлюза для "
+
+msgid " (tunnel peer address)"
+msgstr " (адрес узла на другом конце туннеля)"
+
+msgid "Gateway saved. Apply changes in System → Gateways → Configuration."
+msgstr "Шлюз сохранён. Примените изменения в System → Gateways → Configuration."
+
+msgid "No endpoints yet. Click Add endpoints to add a server or subscription."
+msgstr ""
+"Серверов пока нет. Нажмите «Add endpoints», чтобы добавить сервер или "
+"подписку."
+
+msgid "Cancel import"
+msgstr "Отменить импорт"
+
+msgid "Endpoints"
+msgstr "Серверы"
+
+msgid "Routing"
+msgstr "Маршрутизация"
+
+msgid "General"
+msgstr "Основные"
+
+msgid "Diagnostics"
+msgstr "Диагностика"
+
+msgid "Log"
+msgstr "Журнал"
+
+msgid "Add endpoints"
+msgstr "Добавить серверы"
+
+msgid "Remove selected"
+msgstr "Удалить выбранные"
+
+msgid "Server links or HTTPS subscription URL"
+msgstr "Ссылки на серверы или HTTPS-адрес подписки"
+
+msgid "Subscription file"
+msgstr "Файл подписки"
+
+msgid "Protocol"
+msgstr "Протокол"
+
+msgid "Server"
+msgstr "Сервер"
+
+msgid "Port"
+msgstr "Порт"
+
+msgid "Transport"
+msgstr "Транспорт"
+
+msgid "Tunnel"
+msgstr "Туннель"
+
+msgid "Service"
+msgstr "Служба"
+
+msgid "Enable Xray"
+msgstr "Включить Xray"
+
+msgid "Enable Watchdog"
+msgstr "Включить контроль процессов"
+
+msgid "Firewall destination lists"
+msgstr "Списки назначений межсетевого экрана"
+
+msgid "Firewall geosite categories"
+msgstr "Категории доменов geosite"
+
+msgid "Firewall geoip categories"
+msgstr "Категории сетей geoip"
+
+msgid "Community data sources"
+msgstr "Источники баз сообщества"
+
+msgid "Geosite provider"
+msgstr "Источник geosite"
+
+msgid "Community databases"
+msgstr "Базы сообщества"
+
+msgid "Configured URL"
+msgstr "Настроенный URL"
+
+msgid "Apply Firewall Lists"
+msgstr "Применить списки"
+
+msgid "Update geosite and geoip"
+msgstr "Обновить geosite и geoip"
+
+msgid ""
+"Use XRAY_HOSTS as the destination in your firewall rule and select the "
+"tunnel gateway there."
+msgstr ""
+"Выберите XRAY_HOSTS как назначение в правиле межсетевого экрана и укажите"
+" шлюз туннеля."
+
+msgid "Start"
+msgstr "Запустить"
+
+msgid "Stop"
+msgstr "Остановить"
+
+msgid "Restart"
+msgstr "Перезапустить"
+
+msgid "Test"
+msgstr "Проверить"
+
+msgid "Proxy health checks"
+msgstr "Проверки прокси"
+
+msgid "Edit Instance"
+msgstr "Настройки туннеля"
+
+msgid "Boot Log"
+msgstr "Журнал запуска"
+
+msgid "Core Log"
+msgstr "Журнал Xray"
+
+msgid "Copy Debug Info"
+msgstr "Скопировать диагностику"
+
+msgid "Test connectivity through all running instances"
+msgstr "Проверить доступность через туннель"
+
+msgid "Downloading and validating geodata..."
+msgstr "Загрузка и проверка баз…"
+
+msgid "Import links / subscription file"
+msgstr "Импорт ссылок или файла подписки"
+
+msgid "Parse & Fill"
+msgstr "Разобрать и заполнить"
+
+msgid "Tunnel interface"
+msgstr "Интерфейс туннеля"
+
+msgid "Health check HTTPS URL"
+msgstr "HTTPS-адрес для проверки"
+
+msgid "Probe interval (seconds)"
+msgstr "Интервал проверки (секунды)"
+
+msgid "Outbound Config (JSON)"
+msgstr "Конфигурация прокси (JSON)"
+
+msgid "Xray Log Level"
+msgstr "Уровень журналирования Xray"
+
+msgid "Use Ctrl+C / Cmd+C to copy"
+msgstr "Нажмите Ctrl+C / Cmd+C для копирования"
+
+msgid "Add one host list per row. The firewall alias is XRAY_HOSTS."
+msgstr "Укажите одну категорию на строку. Алиас межсетевого экрана — XRAY_HOSTS."
+
+msgid "Comma-separated GeoIP categories for XRAY_HOSTS."
+msgstr "Категории GeoIP для XRAY_HOSTS через запятую."
+
+msgid "HTTPS address of the binary community database."
+msgstr "HTTPS-адрес двоичного файла базы сообщества."
+
+msgid "Choose file"
+msgstr "Выбрать файл"
+
+msgid "Cancel"
+msgstr "Отмена"
+
+msgid "Close"
+msgstr "Закрыть"
+
+msgid "Removal failed"
+msgstr "Не удалось удалить серверы"
+
+msgid "Save failed"
+msgstr "Не удалось сохранить"
+
+msgid "Request failed"
+msgstr "Не удалось выполнить запрос"
+
+msgid "Could not load endpoints"
+msgstr "Не удалось загрузить серверы"
+
+msgid "Maximum file size is 1 MiB"
+msgstr "Максимальный размер файла — 1 МиБ"
+
+msgid "Enter a server link or select a subscription file"
+msgstr "Введите ссылку или выберите файл подписки"
+
+msgid "Removed. Click Apply to activate."
+msgstr "Удалено. Нажмите «Применить» для активации."
+
+msgid "Firewall rule"
+msgstr "Правило"
+
+msgid "Create an IPv4 LAN rule for XRAY_HOSTS via gateway"
+msgstr "Создать IPv4-правило LAN для XRAY_HOSTS через шлюз"
+
+msgid "Rule saved. Check its order and apply it in Firewall Rules."
+msgstr ""
+"Правило сохранено. Проверьте его порядок и примените изменения в правилах"
+" firewall."
+
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Not tested"
+msgstr "Не проверен"
+
+msgid "Status unavailable"
+msgstr "Статус недоступен"
+
+msgid "Xray is stopped"
+msgstr "Xray выключен"
+
+msgid "Healthy"
+msgstr "Работает"
+
+msgid "Failed"
+msgstr "Не работает"
+
+msgid "Interface enabled and configured:"
+msgstr "Интерфейс включён и настроен:"
+
+msgid "Tunnel gateway address:"
+msgstr "Адрес шлюза туннеля:"
+
+msgid "Custom domains and subdomains"
+msgstr "Свои домены и поддомены"
+
+msgid "Custom exact hostnames"
+msgstr "Свои точные имена хостов"
+
+msgid "Automatically update community lists"
+msgstr "Автоматически обновлять community-списки"
+
+msgid "Download geosite and geoip daily at 04:23 firewall time and apply the selected categories and custom domains."
+msgstr "Ежедневно в 04:23 по времени межсетевого экрана загружать geosite и geoip и применять выбранные категории и свои домены."
+
+msgid "One domain per line, for example example.com. Includes all subdomains. Matching DNS answers are added to XRAY_HOSTS."
+msgstr "По одному домену на строку, например example.com. Включает все поддомены. Адреса из ответов DNS добавляются в XRAY_HOSTS."
+
+msgid "One exact hostname per line, for example api.example.com. Subdomains are not included."
+msgstr "По одному точному имени на строку, например api.example.com. Поддомены не включаются."
+
+msgid "Site routing test"
+msgstr "Проверка маршрутизации сайта"
+
+msgid "Domain or website URL"
+msgstr "Домен или URL сайта"
+
+msgid "Tests applied lists through local Unbound and checks XRAY_HOSTS. Does not test client firewall rules or proxy connectivity."
+msgstr "Проверяет применённые списки через локальный Unbound и наличие адресов в XRAY_HOSTS. Не проверяет правила firewall клиентов и соединение через прокси."
+
+msgid "Domain matches applied lists"
+msgstr "Домен совпадает с применёнными списками"
+
+msgid "Domain does not match applied lists"
+msgstr "Домен не совпадает с применёнными списками"
+
+msgid "In alias"
+msgstr "В алиасе"
+
+msgid "Not in alias"
+msgstr "Нет в алиасе"
+
+msgid "Match"
+msgstr "Совпадение"
+
+msgid "No A or AAAA addresses returned"
+msgstr "Ответ не содержит адресов A или AAAA"
+
+msgid "Subscriptions"
+msgstr "Подписки"
+
+msgid "Subscription"
+msgstr "Подписка"
+
+msgid "Automatic updates"
+msgstr "Автоматическое обновление"
+
+msgid "Interval (minutes)"
+msgstr "Интервал (минуты)"
+
+msgid "Servers"
+msgstr "Серверы"
+
+msgid "Last successful update"
+msgstr "Последнее успешное обновление"
+
+msgid "Last error"
+msgstr "Последняя ошибка"
+
+msgid "No subscriptions yet. Existing endpoints remain manual."
+msgstr "Подписок пока нет. Существующие серверы остаются ручными."
+
+msgid "Add subscription"
+msgstr "Добавить подписку"
+
+msgid "New servers are disabled. Select the servers you need in Endpoints, then click Apply. Disabled servers stay disabled after updates."
+msgstr "Новые серверы выключены. Выберите нужные во вкладке Endpoints и нажмите Применить. Выключенные серверы останутся выключенными после обновлений."
+
+msgid "HTTPS subscription URL"
+msgstr "HTTPS-адрес подписки"
+
+msgid "Update subscription"
+msgstr "Обновить подписку"
+
+msgid "Subscription not found"
+msgstr "Подписка не найдена"
+
+msgid "Saved. Use Update subscription to fetch servers."
+msgstr "Сохранено. Нажмите Обновить подписку для загрузки серверов."
+
+msgid "Updating subscription..."
+msgstr "Обновление подписки..."
+
+msgid "Delete this subscription and its endpoints?"
+msgstr "Удалить подписку и её серверы?"
+
+msgid "Saved. Click Apply to activate."
+msgstr "Сохранено. Нажмите Применить для активации."
+
+msgid "Removed"
+msgstr "Удалён"
+
+msgid "Missing from subscription"
+msgstr "Отсутствует в подписке"
+
+msgid "Disabled"
+msgstr "Выключен"
+
+msgid "Start the tunnel"
+msgstr "Запустить туннель"
+
+msgid "Stop the tunnel"
+msgstr "Остановить туннель"
+
+msgid "Restart the tunnel"
+msgstr "Перезапустить туннель"

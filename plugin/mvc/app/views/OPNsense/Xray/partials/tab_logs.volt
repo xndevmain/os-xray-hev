@@ -4,19 +4,18 @@
     {# ── Toolbar ─────────────────────────────────────────────────────── #}
     <div class="row">
         <section class="col-xs-12">
-            <div style="padding: 8px 15px; border-bottom: 1px solid #ddd;
-                        display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+            <div class="panel-body form-inline">
 
                 {# Log type sub-tabs #}
                 <ul class="nav nav-pills nav-sm" id="logSubTabs" style="margin: 0;">
                     <li class="active">
                         <a data-toggle="tab" href="#logBoot">
-                            <i class="fa fa-terminal fa-fw"></i> {{ lang._('Boot Log') }}
+                            <i class="fa fa-terminal fa-fw"></i> {{ xlang._('Boot Log') }}
                         </a>
                     </li>
                     <li>
                         <a data-toggle="tab" href="#logCore">
-                            <i class="fa fa-file-text-o fa-fw"></i> {{ lang._('Core Log') }}
+                            <i class="fa fa-file-text-o fa-fw"></i> {{ xlang._('Core Log') }}
                         </a>
                     </li>
                 </ul>
@@ -33,23 +32,19 @@
                 <div id="logBoot" class="tab-pane fade in active" style="padding-top: 10px;">
                     <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
                         <button id="logBootRefreshBtn" class="btn btn-sm btn-default">
-                            <i class="fa fa-refresh fa-fw"></i> {{ lang._('Refresh') }}
+                            <i class="fa fa-refresh fa-fw"></i> {{ xlang._('Refresh') }}
                         </button>
                         <span class="text-muted" style="font-size: 12px;">
-                            {{ lang._('/tmp/xray_syshook.log — last 150 lines') }}
+                            {{ xlang._('/tmp/xray_syshook.log — last 150 lines') }}
                         </span>
                     </div>
-                    <pre id="logBootContent"
-                         style="min-height: 300px; max-height: 550px; overflow-y: auto;
-                                background: #1e1e1e; color: #d4d4d4; font-family: monospace;
-                                font-size: 12px; padding: 12px; border-radius: 4px;
-                                border: 1px solid #444;">{{ lang._('Switch to this tab to load log.') }}</pre>
+                    <pre id="logBootContent" class="pre-scrollable">{{ xlang._('Switch to this tab to load log.') }}</pre>
                 </div>
 
                 <div id="logCore" class="tab-pane fade in" style="padding-top: 10px;">
                     <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
                         <button id="logCoreRefreshBtn" class="btn btn-sm btn-default">
-                            <i class="fa fa-refresh fa-fw"></i> {{ lang._('Refresh') }}
+                            <i class="fa fa-refresh fa-fw"></i> {{ xlang._('Refresh') }}
                         </button>
                         <div class="input-group input-group-sm" style="min-width: 200px; width: auto;">
                             <span class="input-group-addon">
@@ -59,14 +54,10 @@
                             </select>
                         </div>
                         <span class="text-muted" style="font-size: 12px;">
-                            {{ lang._('/var/log/xray-core-{uuid}.log — last 200 lines') }}
+                            {{ xlang._('/var/log/xray-core-{uuid}.log — last 200 lines') }}
                         </span>
                     </div>
-                    <pre id="logCoreContent"
-                         style="min-height: 300px; max-height: 550px; overflow-y: auto;
-                                background: #1e1e1e; color: #d4d4d4; font-family: monospace;
-                                font-size: 12px; padding: 12px; border-radius: 4px;
-                                border: 1px solid #444;">{{ lang._('Click "Core Log" to load.') }}</pre>
+                    <pre id="logCoreContent" class="pre-scrollable">{{ xlang._('Click "Core Log" to load.') }}</pre>
                 </div>
 
             </div>

@@ -1,7 +1,12 @@
 <menu>
     <VPN>
         <Xray cssClass="fa fa-rocket fa-fw">
-            <General order="10" url="/ui/xray/"/>
+            <General order="10" url="/ui/xray/#general"/>
+            <Endpoints order="20" url="/ui/xray/#endpoints"/>
+            <Subscriptions order="25" url="/ui/xray/#subscriptions"/>
+            <Routing order="30" url="/ui/xray/#routing"/>
+            <Diagnostics order="40" url="/ui/xray/#diagnostics"/>
+            <Log order="50" url="/ui/xray/#logs"/>
         </Xray>
     </VPN>
 </menu>

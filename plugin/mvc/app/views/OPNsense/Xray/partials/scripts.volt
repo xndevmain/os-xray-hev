@@ -1,5 +1,92 @@
 <script>
     $(document).ready(function () {
+        var catalogs = {geosite: [], geoip: []};
+        function fillPicker(select, kind, value) {
+            select.empty().append(new Option("{{ xlang._("Choose a category") }}", ""));
+            new Set(catalogs[kind].concat(value ? [value] : [])).forEach(function (name) { select.append(new Option(name, name)); });
+            select.val(value || "");
+        }
+        function initCategoryRows(kind) {
+            var field = $('#frm_routing_settings [id="general.firewall_' + kind + '"]');
+            if (!field.length) return;
+            $('#' + kind + 'Choices').remove();
+            var box = $('<div>').attr('id', kind + 'Choices').insertAfter(field.hide());
+            var rows = $('<div>').appendTo(box);
+            function normalize(value) {
+                return value.trim().replace(new RegExp('^' + kind + ':', 'i'), '').toLowerCase();
+            }
+            function sync() {
+                var selected = new Set();
+                rows.find('select').each(function () {
+                    var name = normalize(this.value);
+                    if (name) selected.add(name);
+                });
+                field.val(Array.from(selected).join(',')).trigger('change');
+            }
+            function addRow(value) {
+                var row = $('<div class="input-group" style="margin-bottom:4px">').appendTo(rows);
+                var input = $('<select class="selectpicker" data-live-search="true" data-size="9" data-width="100%" aria-label="{{ xlang._("Category") }}">').appendTo(row);
+                fillPicker(input, kind, value);
+                input.selectpicker({container: 'body', virtualScroll: false}).on('change', sync);
+                // Enter accepts a manually specified category (including @attribute) when no item matches.
+                input.data('selectpicker').$menu.find('.bs-searchbox input').on('keydown', function (event) {
+                    var name = normalize(this.value);
+                    if (event.key === 'Enter' && name && !catalogs[kind].some(function (item) { return item.indexOf(name) >= 0; })) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        fillPicker(input, kind, name);
+                        input.selectpicker('refresh').selectpicker('toggle');
+                        sync();
+                    }
+                });
+                var buttons = $('<span class="input-group-btn">').appendTo(row);
+                $('<button type="button" class="btn btn-default" aria-label="{{ xlang._("Remove category") }}" title="{{ xlang._("Remove category") }}"><i class="fa fa-trash"></i></button>')
+                    .appendTo(buttons).click(function () { input.selectpicker('destroy'); row.remove(); sync(); });
+                return input;
+            }
+            String(field.val() || '').split(/[,\r\n]+/).map(normalize).filter(Boolean).forEach(function (name) {
+                addRow(name);
+            });
+            $('<button type="button" class="btn btn-sm btn-default" aria-label="{{ xlang._("Add category") }}" title="{{ xlang._("Add category") }}"><i class="fa fa-fw fa-plus"></i> {{ xlang._("Add category") }}</button>')
+                .appendTo(box).click(function () { var picker = addRow(''); picker.one('loaded.bs.select', function () { picker.data('selectpicker').$button.trigger('click'); }); });
+        }
+
+        function refreshCategories() {
+            return $.getJSON('/api/xray/service/geosites').done(function (data) {
+                ['geosite', 'geoip'].forEach(function (kind) {
+                    catalogs[kind] = data[kind === 'geosite' ? 'categories' : 'geoip'] || [];
+                    $('#' + kind + 'Choices select').each(function () {
+                        var select = $(this);
+                        fillPicker(select, kind, select.val());
+                        select.selectpicker('refresh');
+                    });
+                });
+            }).fail(function () { $('#geodataResult').text('Could not load the category catalog'); });
+        }
+
+        $('#siteTestHost').on('keydown', function(e){ if(e.key === 'Enter') {e.preventDefault(); $('#siteTestButton').click();} });
+        $('#siteTestButton').click(async function(){
+            var button=$(this), host=$('#siteTestHost').val().trim(), result=$('#siteTestResult');
+            if (!host || button.prop('disabled')) return;
+            button.prop('disabled',true); result.text('{{ xlang._("Testing...") }}');
+            try {
+                var data=await $.post('/api/xray/service/testSite',{host:host},null,'json');
+                if(data.result!=='ok') throw Error(data.message || '{{ xlang._("Request failed") }}');
+                result.empty();
+                $('<p>').text(data.host + ' — ' + (data.domain_match ? '{{ xlang._("Domain matches applied lists") }}' : '{{ xlang._("Domain does not match applied lists") }}')).appendTo(result);
+                var table=$('<table class="table table-condensed table-striped">').appendTo(result);
+                $('<thead>').append($('<tr>').append($('<th>').text('IP'),$('<th>').text('XRAY_HOSTS'),$('<th>').text('GeoIP'))).appendTo(table);
+                var body=$('<tbody>').appendTo(table);
+                data.addresses.forEach(function(row){
+                    var badge=$('<span>').addClass('label '+(row.in_alias?'label-success':'label-warning')).text(row.in_alias?'{{ xlang._("In alias") }}':'{{ xlang._("Not in alias") }}');
+                    $('<tr>').append($('<td>').text(row.address),$('<td>').append(badge),$('<td>').text(row.geoip_match?'{{ xlang._("Match") }}':'—')).appendTo(body);
+                });
+                if(!data.addresses.length) $('<p>').text('{{ xlang._("No A or AAAA addresses returned") }}').appendTo(result);
+                if(data.dns_errors.length) $('<p class="text-warning">').text(data.dns_errors.join('; ')).appendTo(result);
+            } catch(error){result.text(error.message || '{{ xlang._("Request failed") }}');}
+            finally{button.prop('disabled',false);}
+        });
+
         // ── Helpers ───────────────────────────────────────────────
         function escAttr(s) {
             return String(s).replace(/[&"<>]/g, function (c) {
@@ -10,130 +97,145 @@
         // ── Per-instance status overlay ───────────────────────────
         var instanceStatusCache = {};
         var instanceTestCache   = {};
-
-        function statusBadge(info) {
-            if (!info) return '<span class="label label-default" style="font-size:11px;">--</span>';
-            var xOk = info.xray_core === 'running';
-            var tOk = info.tun2socks === 'running';
-            return '<span class="label ' + (xOk ? 'label-success' : 'label-danger') + '" style="font-size:11px;">' +
-                'xray: ' + (xOk ? 'up' : 'down') +
-                '</span> ' +
-                '<span class="label ' + (tOk ? 'label-success' : 'label-danger') + '" style="font-size:11px;">' +
-                'tun: ' + (tOk ? 'up' : 'down') +
-                '</span>';
-        }
-
-        function applyStatusToGrid() {
-            $('#grid-instances .xray-status-cell').each(function () {
-                var uuid = $(this).data('uuid');
-                $(this).html(statusBadge(instanceStatusCache[uuid]));
-            });
-        }
-
-        function testResultBadge(info) {
-            if (!info) return '<span style="font-size:11px;color:#999;">--</span>';
-            var ok = info.result === 'ok';
-            return '<span class="label ' + (ok ? 'label-success' : 'label-danger') + '" style="font-size:11px;">'
-                + escAttr(info.message) + '</span>';
-        }
-
-        function applyTestResultToGrid() {
-            $('#grid-instances .xray-test-cell').each(function () {
-                var uuid = $(this).data('uuid');
-                $(this).html(testResultBadge(instanceTestCache[uuid]));
-            });
-        }
-
-        // ── Instances CRUD table (UIBootgrid) ───────────────────────
-        $('#grid-instances').UIBootgrid({
-            search: '/api/xray/instance/searchItem',
-            get:    '/api/xray/instance/getItem/',
-            set:    '/api/xray/instance/setItem/',
-            add:    '/api/xray/instance/addItem',
-            del:    '/api/xray/instance/delItem/',
-            toggle: '/api/xray/instance/toggleItem/',
-            options: {
-                formatters: {
-                    instanceStatus: function (column, row) {
-                        // TODO: show "disabled" label instead of status badges when row.enabled === '0'
-                        return '<span class="xray-status-cell" data-uuid="' + escAttr(row.uuid) + '">' +
-                            statusBadge(instanceStatusCache[row.uuid]) + '</span>';
-                    },
-                    instanceTestResult: function (column, row) {
-                        return '<span class="xray-test-cell" data-uuid="' + escAttr(row.uuid) + '">'
-                            + testResultBadge(instanceTestCache[row.uuid]) + '</span>';
-                    },
-                    commands: function (column, row) {
-                        // TODO: disable/hide cmd-inst-start and cmd-inst-stop when row.enabled === '0'
-                        var uuid = escAttr(row.uuid);
-                        return '<button type="button" class="btn btn-xs btn-success cmd-inst-start bootgrid-tooltip"'
-                             +   ' data-row-id="' + uuid + '" title="{{ lang._("Start this instance") }}">'
-                             +   '<span class="fa fa-play fa-fw"></span></button> '
-                             + '<button type="button" class="btn btn-xs btn-danger cmd-inst-stop bootgrid-tooltip"'
-                             +   ' data-row-id="' + uuid + '" title="{{ lang._("Stop this instance") }}">'
-                             +   '<span class="fa fa-stop fa-fw"></span></button> '
-                             + '<button type="button" class="btn btn-xs btn-default cmd-inst-test bootgrid-tooltip"'
-                             +   ' data-row-id="' + uuid + '" title="{{ lang._("Test") }}">'
-                             +   '<span class="fa fa-plug fa-fw"></span></button> '
-                             + '<button type="button" class="btn btn-xs btn-default command-edit bootgrid-tooltip"'
-                             +   ' data-row-id="' + uuid + '" title="{{ lang._("Edit") }}">'
-                             +   '<span class="fa fa-pencil fa-fw"></span></button> '
-                             + '<button type="button" class="btn btn-xs btn-default command-delete bootgrid-tooltip"'
-                             +   ' data-row-id="' + uuid + '" title="{{ lang._("Delete") }}">'
-                             +   '<span class="fa fa-trash-o fa-fw"></span></button>';
-                    }
+        var editingUuid = '';
+        var tunnelFormLoaded = false;
+        function loadTunnel() {
+            return $.post('/api/xray/instance/searchItem', {current:1,rowCount:1}, function (data) {
+                var tunnel = (data.rows || [])[0];
+                if (!tunnel) { $('#singleTunnel .xray-gateway').prop('disabled', true); return; }
+                editingUuid = tunnel.uuid;
+                if (!tunnelFormLoaded) {
+                    mapDataToFormUI({'frm_tunnel_settings': '/api/xray/instance/getItem/' + editingUuid}).done(function (data) {
+                        if (!data.frm_tunnel_settings) return;
+                        tunnelFormLoaded = true;
+                        $('#tunnelSettings').prop('disabled', false);
+                        formatTokenizersUI();
+                        $('#frm_tunnel_settings .selectpicker').selectpicker('refresh');
+                    });
                 }
-            }
-        });
-
-        // After grid loads/reloads data, fetch and overlay status
-        $('#grid-instances').on('loaded.rs.jquery.bootgrid', function () {
-            refreshInstancesStatus();
-            populateInstanceSelects();
-        });
-
-        // Per-instance start / stop / test (row button handlers)
-        $(document).on('click', '#grid-instances .cmd-inst-start', function () {
-            instanceServiceAction('start', $(this).data('row-id'));
-        });
-        $(document).on('click', '#grid-instances .cmd-inst-stop', function () {
-            instanceServiceAction('stop', $(this).data('row-id'));
-        });
-        $(document).on('click', '#grid-instances .cmd-inst-test', function () {
-            var uuid = $(this).data('row-id');
-            var $btn = $(this).prop('disabled', true);
-            $.ajax({
-                url: '/api/xray/service/testconnect/' + encodeURIComponent(uuid),
-                type: 'POST', dataType: 'json',
-                success: function (data) {
-                    instanceTestCache[uuid] = data;
-                    applyTestResultToGrid();
-                },
-                complete: function () { $btn.prop('disabled', false); }
-            });
-        });
-
-        function instanceServiceAction(action, uuid) {
-            var url = '/api/xray/service/' + action + (uuid ? '/' + encodeURIComponent(uuid) : '');
-            $.ajax({
-                url: url, type: 'POST', dataType: 'json',
-                success: function () { setTimeout(refreshInstancesStatus, 1500); }
-            });
+                $('#tunnelName').text(tunnel.name + ' · ' + tunnel.tun_interface);
+                $('#singleTunnel button').attr('data-tun', tunnel.tun_interface)
+                    .attr('data-assigned', tunnel.assignment || '').prop('disabled', false);
+                $('#singleTunnel .xray-gateway').attr('data-peer', tunnel.gateway_peer || '')
+                    .prop('disabled', !tunnel.assignment);
+                populateInstanceSelects();
+            }, 'json');
         }
+        loadTunnel();
+        $(document).on('xrayTunnelChanged', loadTunnel);
+        function createNetworkItem(url, payload, button, done) {
+            button.prop('disabled', true);
+            $.post(url, payload, null, 'json').done(function (reply) {
+                if (reply.result === 'saved') {
+                    loadTunnel();
+                    done();
+                } else {
+                    window.alert(Object.values(reply.validations || {}).join('\n') || reply.message || '{{ xlang._("OPNsense rejected the changes.") }}');
+                }
+            }).fail(function (xhr) { window.alert('{{ xlang._("OPNsense error: HTTP ") }}' + xhr.status); })
+              .always(function () { button.prop('disabled', false); });
+        }
+        $('#singleTunnel').on('click', '.xray-assign', function () {
+            var button = $(this).prop('disabled', true);
+            $.post('/api/xray/service/setupInterface', {}, null, 'json').done(function(reply) {
+                if (reply.result === 'saved') {
+                    window.alert('{{ xlang._("Interface enabled and configured:") }} ' + reply.address + '\n{{ xlang._("Tunnel gateway address:") }} ' + reply.peer);
+                    loadTunnel();
+                } else if (reply.result === 'existing') {
+                    window.location.href = '/interfaces.php?if=' + encodeURIComponent(reply.interface);
+                } else {
+                    window.alert(reply.message || '{{ xlang._("OPNsense rejected the changes.") }}');
+                }
+            }).fail(function(){ window.alert('{{ xlang._("Request failed") }}'); })
+              .always(function(){ button.prop('disabled', false); });
+        }).on('click', '.xray-gateway', async function () {
+            var button = $(this).prop('disabled', true);
+            try { await loadTunnel(); } catch (error) { button.prop('disabled', true); return; }
+            var assigned = button.attr('data-assigned');
+            if (!assigned) { window.alert('{{ xlang._("Assign and configure the interface first.") }}'); return; }
+            var gateway = button.attr('data-peer') || window.prompt('{{ xlang._("Gateway IPv4 address for ") }}' + button.attr('data-tun') + '{{ xlang._(" (tunnel peer address)") }}');
+            if (!gateway || !gateway.trim()) return;
+            createNetworkItem('/api/routing/settings/addGateway', {gateway_item: {
+                name: 'XRAY_' + assigned.toUpperCase() + '_GW', interface: assigned, gateway: gateway.trim(),
+                ipprotocol: 'inet', defaultgw: '0', fargw: '1', monitor_disable: '1'
+            }}, button, function () { window.alert('{{ xlang._("Gateway saved. Apply changes in System → Gateways → Configuration.") }}'); });
+        });
+
+        $('#singleTunnel').on('click', '.xray-rule', function () {
+            var button = $(this), assigned = button.attr('data-assigned');
+            if (!assigned) { window.alert('{{ xlang._("Assign and configure the interface first.") }}'); return; }
+            var gateway = 'XRAY_' + assigned.toUpperCase() + '_GW';
+            if (!window.confirm('{{ xlang._("Create an IPv4 LAN rule for XRAY_HOSTS via gateway") }} ' + gateway + '?')) return;
+            createNetworkItem('/api/xray/service/setupRule', {}, button, function () { window.alert('{{ xlang._("Rule saved. Check its order and apply it in Firewall Rules.") }}'); });
+        });
 
         // ── General settings form ───────────────────────────────────
-        mapDataToFormUI({'frm_general_settings': "/api/xray/general/get"}).done(function () {
+        $('#geositeSource').change(function () {
+            if ($(this).val()) $('[id="general.geosite_url"]').val($(this).val());
+        });
+        $('#cancelGeodata').click(function () {
+            var button = $(this).prop('disabled', true);
+            $.post('/api/xray/service/cancelGeodata', {}, function (data) {
+                $('#geodataResult').text(data.message);
+            }, 'json').fail(function () { button.prop('disabled', false); });
+        });
+        $('#btnGeodata').click(function () {
+            var $btn = $(this).prop('disabled', true);
+            var $result = $('#geodataResult').text('{{ xlang._("Saving settings...") }}');
+            saveFormToEndpoint('/api/xray/general/set', 'frm_routing_settings', function () {
+                $result.text('{{ xlang._("Downloading and validating geodata...") }}');
+                $('#cancelGeodata').prop('hidden', false).prop('disabled', false);
+                $.ajax({url: '/api/xray/service/geodata', type: 'POST', dataType: 'json', timeout: 240000})
+                    .done(function (data) { $result.text(data.message || data.result); if (data.result === 'ok') refreshCategories(); })
+                    .fail(function (xhr) { $result.text('Import failed: HTTP ' + xhr.status); })
+                    .always(function () { $('#cancelGeodata').prop('hidden', true); $btn.prop('disabled', false); });
+            });
+        });
+        $('#btnFirewallLists').click(function () {
+            var $btn = $(this).prop('disabled', true);
+            var $result = $('#firewallListsResult').text('{{ xlang._("Applying firewall lists...") }}');
+            saveFormToEndpoint('/api/xray/general/set', 'frm_routing_settings', function () {
+            $.ajax({url: '/api/xray/service/firewallLists', type: 'POST', dataType: 'json', timeout: 120000})
+                .done(function (data) { $result.text(data.message || data.result); })
+                .fail(function (xhr) { $result.text('Apply failed: HTTP ' + xhr.status); })
+                .always(function () { $btn.prop('disabled', false); });
+            });
+        });
+        mapDataToFormUI({'frm_general_settings': '/api/xray/general/get', 'frm_routing_settings': '/api/xray/general/get', 'frm_watchdog_settings': '/api/xray/general/get'}).done(function () {
+            refreshCategories().always(function () {
+                initCategoryRows('geosite');
+                initCategoryRows('geoip');
+            });
+            var geoipRow = $('[id="general.firewall_geoip"]').closest('tr');
+            $('<tr><td></td><td colspan="2"></td></tr>').insertAfter(geoipRow)
+                .children().last().append($('#firewallListActions').removeClass('form-group'));
+            var sourceRow = $('[id="general.geosite_url"]').closest('tr');
+            if (sourceRow.length) {
+                $('#communityControls tbody > tr').insertBefore(sourceRow);
+                $('#communityControls').remove();
+            }
+            $('#geositeSource').val($('[id="general.geosite_url"]').val() || '');
+            if (!$('#geositeSource').val()) $('#geositeSource').val('');
             formatTokenizersUI();
             $('.selectpicker').selectpicker('refresh');
         });
 
-        // ── Apply (save general, then reconfigure) ──────────────────
+        // ── Apply (save tunnel and general, then reconfigure) ──────────────────
         $("#reconfigureAct").SimpleActionButton({
             onPreAction: function () {
                 var dfObj = new $.Deferred();
-                saveFormToEndpoint("/api/xray/general/set", 'frm_general_settings', function () {
-                    dfObj.resolve();
-                });
+                if (!editingUuid || !tunnelFormLoaded) return dfObj.reject();
+                function failed() { dfObj.reject(); }
+                saveFormToEndpoint('/api/xray/instance/setItem/' + editingUuid, 'frm_tunnel_settings', function () {
+                    saveFormToEndpoint('/api/xray/general/set', 'frm_general_settings', function () {
+                        saveFormToEndpoint('/api/xray/general/set', 'frm_watchdog_settings', function () {
+                            saveFormToEndpoint('/api/xray/general/set', 'frm_routing_settings', function () {
+                                loadTunnel();
+                                dfObj.resolve();
+                            }, false, failed);
+                        }, false, failed);
+                    }, false, failed);
+                }, false, failed);
                 return dfObj;
             }
         });
@@ -148,7 +250,7 @@
                 var anyXray = false, anyTun = false;
                 $.each(data, function (uuid, info) {
                     if (info.xray_core === 'running') anyXray = true;
-                    if (info.tun2socks === 'running') anyTun = true;
+                    if (info['hev-socks5-tunnel'] === 'running') anyTun = true;
                 });
                 var xok = anyXray, tok = anyTun;
                 $('#badge_xray')
@@ -158,10 +260,10 @@
                 $('#badge_tun')
                     .removeClass('label-success label-danger label-default')
                     .addClass(tok ? 'label-success' : 'label-danger')
-                    .text('tun2socks: ' + (tok ? 'running' : 'stopped'));
+                    .text('hev-socks5-tunnel: ' + (tok ? 'running' : 'stopped'));
 
                 // Update per-instance status in grid
-                applyStatusToGrid();
+                
 
                 var running = xok || tok;
                 $('#btnStartAll').prop('disabled', running);
@@ -192,7 +294,7 @@
                 success: function (data) {
                     $btn.html(origHtml);
                     if (data.result !== 'ok') {
-                        alert('{{ lang._("Action failed:") }} ' + (data.message || 'unknown error'));
+                        alert('{{ xlang._("Action failed:") }} ' + (data.message || 'unknown error'));
                     }
                     setTimeout(function () {
                         refreshInstancesStatus();
@@ -203,7 +305,7 @@
                 error: function (xhr) {
                     $btn.html(origHtml);
                     $btns.prop('disabled', false);
-                    alert('{{ lang._("HTTP error:") }} ' + xhr.status);
+                    alert('{{ xlang._("HTTP error:") }} ' + xhr.status);
                 }
             });
         }
@@ -212,182 +314,41 @@
             serviceAction('start', null, null);
         });
         $('#btnStopAll').click(function () {
-            var confirmStop = '{{ lang._("Stop Xray VPN? Active connections will be terminated.") }}';
+            var confirmStop = '{{ xlang._("Stop Xray VPN? Active connections will be terminated.") }}';
             serviceAction('stop', confirmStop, null);
         });
         $('#btnRestartAll').click(function () {
             serviceAction('restart', null, null);
         });
 
-        // ── Test Connection ─────────────────────────────────────────
-        $('#btnTestConnect').click(function () {
-            var $btn = $(this).prop('disabled', true);
-            var $res = $('#testConnectResult');
-
-            var uuids = [];
-            $.each(instanceStatusCache, function (uuid, info) {
-                // TODO: check on enabled status
-                if (info.xray_core === 'running') { uuids.push(uuid); }
-            });
-
-            if (!uuids.length) {
-                $res.removeClass('text-success').addClass('text-danger')
-                    .text("{{ lang._('No running instances.') }}");
-                $btn.prop('disabled', false);
-                return;
-            }
-
-            $res.removeClass('text-success text-danger').text("{{ lang._('Testing...') }}");
-            var pending = uuids.length;
-
-            $.each(uuids, function (_, uuid) {
-                $.ajax({
-                    url: '/api/xray/service/testconnect/' + encodeURIComponent(uuid),
-                    type: 'POST', dataType: 'json',
-                    success: function (data) {
-                        instanceTestCache[uuid] = data;
-                        applyTestResultToGrid();
-                    },
-                    complete: function () {
-                        pending--;
-                        if (pending === 0) {
-                            $btn.prop('disabled', false);
-                            $res.removeClass('text-success text-danger').text('');
-                        }
-                    }
-                });
-            });
-        });
-
-        // ── Import VLESS (inside DialogInstance) ──────────────────
-        function applyImportToDialog(data) {
-            var $dlg = $('#DialogInstance');
-            if (data.name) {
-                $dlg.find('[id="instance.name"]').val(data.name);
-            }
-            $dlg.find('[id="instance.outbound_config"]').val(data.outbound_config || '');
-        }
-
-        // Inject Import panel + Validate button into DialogInstance on first open
-        var dialogInjected = false;
-        $('#DialogInstance').on('show.bs.modal', function () {
-            if (dialogInjected) {
-                // Reset state on each open
-                $('#dlgImportLink').val('');
-                $('#dlgImportResult').text('').removeClass('text-success text-danger');
-                $('#dlgImportPanel').collapse('hide');
-                $('#dlgValidateResult').text('').removeClass('text-success text-danger');
-                return;
-            }
-            dialogInjected = true;
-
-            // Import panel — collapsible, injected before the form table
-            var importHtml =
-                '<div style="margin: 0 0 10px;">' +
-                    '<a data-toggle="collapse" href="#dlgImportPanel" class="btn btn-sm btn-default" style="margin-bottom: 6px;">' +
-                        '<i class="fa fa-upload"></i> {{ lang._("Import VLESS link") }}' +
-                    '</a>' +
-                    '<div id="dlgImportPanel" class="collapse">' +
-                        '<div class="well well-sm" style="margin-bottom: 0;">' +
-                            '<div class="input-group">' +
-                                '<input type="text" id="dlgImportLink" class="form-control input-sm"' +
-                                '  style="font-family: monospace; font-size: 12px;"' +
-                                '  placeholder="vless://UUID@host:443?security=reality&pbk=...#Name" />' +
-                                '<span class="input-group-btn">' +
-                                    '<button type="button" id="dlgImportParseBtn" class="btn btn-sm btn-primary">' +
-                                        '<i class="fa fa-magic"></i> {{ lang._("Parse & Fill") }}' +
-                                    '</button>' +
-                                '</span>' +
-                            '</div>' +
-                            '<span id="dlgImportResult" style="font-size: 12px; display: inline-block; margin-top: 4px;"></span>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>';
-            var $body = $(this).find('.modal-body');
-            $body.prepend(importHtml);
-
-            // Validate button — in footer, before Save
-            var validateHtml =
-                '<button type="button" id="dlgValidateBtn" class="btn btn-info pull-left">' +
-                    '<i class="fa fa-check-circle"></i> {{ lang._("Validate Config") }}' +
-                '</button>' +
-                '<span id="dlgValidateResult" class="pull-left" style="font-size: 12px; line-height: 34px; margin-left: 8px;"></span>';
-            var $footer = $(this).find('.modal-footer');
-            $footer.prepend(validateHtml);
-        });
-
-        // Import parse handler (inside dialog)
-        $(document).on('click', '#dlgImportParseBtn', function () {
-            var link = $.trim($('#dlgImportLink').val());
-            var $res = $('#dlgImportResult');
-            if (!link) {
-                $res.removeClass('text-success').addClass('text-danger')
-                    .text("{{ lang._('Paste a VLESS link first.') }}");
-                return;
-            }
-
-            var $btn = $(this).prop('disabled', true);
-            $res.removeClass('text-success text-danger').text("{{ lang._('Parsing...') }}");
-            var b64 = btoa(unescape(encodeURIComponent(link)));
-
-            $.ajax({
-                url:         '/api/xray/import/parse',
-                type:        'POST',
-                contentType: 'application/json; charset=utf-8',
-                data:        JSON.stringify({link_b64: b64}),
-                dataType:    'json',
-                success: function (data) {
-                    $btn.prop('disabled', false);
-                    if (data.status !== 'ok') {
-                        $res.removeClass('text-success').addClass('text-danger')
-                            .text("{{ lang._('Parse error:') }} " + (data.message || 'unknown'));
-                        return;
-                    }
-                    applyImportToDialog(data);
-                    $res.removeClass('text-danger').addClass('text-success')
-                        .text("{{ lang._('Imported! Fields filled from link.') }}");
-                    // Collapse import panel after success
-                    setTimeout(function () { $('#dlgImportPanel').collapse('hide'); }, 1500);
-                },
-                error: function (xhr) {
-                    $btn.prop('disabled', false);
-                    $res.removeClass('text-success').addClass('text-danger')
-                        .text("{{ lang._('HTTP error:') }} " + xhr.status);
-                }
-            });
-        });
-
-        // Enter key in import field triggers parse
-        $(document).on('keypress', '#dlgImportLink', function (e) {
-            if (e.which === 13) {
-                e.preventDefault();
-                $('#dlgImportParseBtn').click();
-            }
-        });
-
-        // ── Validate Config (inside DialogInstance footer) ────────
+        // Validate the saved configuration without applying changes.
         $(document).on('click', '#dlgValidateBtn', function () {
             var $btn = $(this).prop('disabled', true);
             var $res = $('#dlgValidateResult');
-            $res.removeClass('text-success text-danger').text("{{ lang._('Validating...') }}");
+            if (!editingUuid) {
+                $btn.prop('disabled', false);
+                $res.text('{{ xlang._("Save the instance before validating it.") }}');
+                return;
+            }
+            $res.removeClass('text-success text-danger').text("{{ xlang._('Validating...') }}");
 
             $.ajax({
-                url:      '/api/xray/service/validate',
+                url:      '/api/xray/service/validate/' + encodeURIComponent(editingUuid),
                 type:     'POST',
                 dataType: 'json',
                 success: function (data) {
                     $btn.prop('disabled', false);
                     if (data.result === 'ok') {
                         $res.removeClass('text-danger').addClass('text-success')
-                            .text(data.message || "{{ lang._('Config is valid') }}");
+                            .text(data.message || "{{ xlang._('Config is valid') }}");
                     } else {
                         $res.removeClass('text-success').addClass('text-danger')
-                            .text(data.message || "{{ lang._('Validation failed') }}");
+                            .text(data.message || "{{ xlang._('Validation failed') }}");
                     }
                 },
                 error: function (xhr) {
                     $btn.prop('disabled', false);
-                    $res.addClass('text-danger').text("{{ lang._('HTTP error:') }} " + xhr.status);
+                    $res.addClass('text-danger').text("{{ xlang._('HTTP error:') }} " + xhr.status);
                 }
             });
         });
@@ -446,7 +407,7 @@
                 $('#diag_pkts_in').text(data.pkts_in != null ? data.pkts_in.toLocaleString() : '\u2014');
                 $('#diag_pkts_out').text(data.pkts_out != null ? data.pkts_out.toLocaleString() : '\u2014');
                 $('#diag_xray_uptime').text(data.xray_uptime || '\u2014');
-                $('#diag_t2s_uptime').text(data.tun2socks_uptime || '\u2014');
+                $('#diag_hev_uptime').text(data['hev-socks5-tunnel_uptime'] || '\u2014');
                 $('#diag_ping_rtt').text(data.ping_rtt || 'N/A');
             });
         }
@@ -477,15 +438,15 @@
             var uuid = $('#logInstanceSelect').val();
             var apiEndpointWithUuid = apiEndpoint + (uuid ? '/' + encodeURIComponent(uuid) : '');
             $('#' + btnId).prop('disabled', true);
-            $('#' + preId).text("{{ lang._('Loading...') }}");
+            $('#' + preId).text("{{ xlang._('Loading...') }}");
             $.post(apiEndpointWithUuid, null, function (data) {
-                var text = (data && data.log) || "{{ lang._('Log is empty.') }}";
+                var text = (data && data.log) || "{{ xlang._('Log is empty.') }}";
                 $('#' + preId).text(text);
                 $('#' + btnId).prop('disabled', false);
                 var pre = document.getElementById(preId);
                 if (pre) { pre.scrollTop = pre.scrollHeight; }
             }, 'json').fail(function (xhr) {
-                $('#' + preId).text("{{ lang._('Error loading log:') }} " + xhr.status);
+                $('#' + preId).text("{{ xlang._('Error loading log:') }} " + xhr.status);
                 $('#' + btnId).prop('disabled', false);
             });
         }
@@ -520,7 +481,7 @@
         $('#btnCopyDebug').click(function () {
             var $btn = $(this).prop('disabled', true);
             var $res = $('#copyDebugResult');
-            $res.removeClass('text-success text-danger').text("{{ lang._('Collecting...') }}");
+            $res.removeClass('text-success text-danger').text("{{ xlang._('Collecting...') }}");
 
             var diagData = {}, bootLog = '', coreLog = '';
             var diagDone = $.Deferred(), bootDone = $.Deferred(), coreDone = $.Deferred();
@@ -555,17 +516,24 @@
                     ta.focus();
                     ta.select();
                 });
-                $res.addClass('text-success').text("{{ lang._('Use Ctrl+C / Cmd+C to copy') }}");
+                $res.addClass('text-success').text("{{ xlang._('Use Ctrl+C / Cmd+C to copy') }}");
                 $btn.prop('disabled', false);
             });
         });
 
-        // ── Tab hash ────────────────────────────────────────────────
-        if (window.location.hash !== "") {
-            $('a[href="' + window.location.hash + '"]').click();
+        // Sidebar links can change the hash without reloading this page.
+        function showMainTab() {
+            var hash = window.location.hash || '#general';
+            $('#maintabs a').filter(function () {
+                return this.getAttribute('href') === hash;
+            }).tab('show');
         }
-        $('.nav-tabs a').on('shown.bs.tab', function (e) {
-            history.pushState(null, null, e.target.hash);
+        $(window).on('hashchange', showMainTab);
+        $('#maintabs a').on('shown.bs.tab', function (e) {
+            if (window.location.hash !== e.target.hash) {
+                history.replaceState(null, null, e.target.hash);
+            }
         });
+        showMainTab();
     });
 </script>

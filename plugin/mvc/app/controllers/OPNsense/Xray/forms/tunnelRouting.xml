@@ -1,0 +1,14 @@
+<form>
+    <field><type>subheader</type><label>Routing inside the tunnel</label></field>
+    <field><id>instance.direct_domains</id><label>Direct domains / geosite</label><type>textbox</type><help>Comma or newline separated Xray domain rules, e.g. geosite:private. Direct rules take priority over proxy rules.</help></field>
+    <field><id>instance.direct_ips</id><label>Direct IPs / geoip</label><type>textbox</type><help>Comma or newline separated networks or geoip categories, e.g. geoip:private,geoip:ru.</help></field>
+    <field><id>instance.proxy_domains</id><label>Proxy domains / geosite</label><type>textbox</type><help>Comma or newline separated rules, e.g. geosite:youtube. Import geosite.dat in General first. Domain matching for TUN traffic uses TLS/HTTP/QUIC sniffing where possible.</help></field>
+    <field><id>instance.proxy_ips</id><label>Proxy IPs / geoip</label><type>textbox</type><help>Comma or newline separated networks or geoip categories. Import geoip.dat in General first.</help></field>
+    <field>
+        <id>instance.bypass_networks</id>
+        <label>Bypass Networks</label>
+        <type>text</type>
+        <help>Comma-separated list of CIDR networks that should bypass the VPN tunnel and go direct. These networks will be routed via the 'direct' (freedom) outbound instead of the proxy.</help>
+        <hint>Default: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16. Add your own networks or IPs (e.g. 100.64.0.0/10,203.0.113.5/32)</hint>
+    </field>
+</form>

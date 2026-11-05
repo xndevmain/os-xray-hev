@@ -4,7 +4,7 @@
  * xray-ifstats.php — E4: статистика TUN-интерфейса и процессов для панели Diagnostics.
  *
  * Читает имя TUN-интерфейса из OPNsense config.xml,
- * собирает: IP, bytes in/out, состояние, uptime процессов xray-core и tun2socks.
+ * собирает: IP, bytes in/out, состояние, uptime процессов xray-core и hev-socks5-tunnel.
  * Выводит JSON — ServiceController::diagnosticsAction() декодирует и отдаёт в GUI.
  */
 
@@ -12,7 +12,7 @@ require_once('config.inc');
 
 // ─── Per-instance path helpers (mirrors xray-service-control.php) ────────────
 function xray_pid_path(string $uuid): string  { return "/var/run/xray_core_{$uuid}.pid"; }
-function t2s_pid_path(string $uuid): string   { return "/var/run/tun2socks_{$uuid}.pid"; }
+function hev_pid_path(string $uuid): string   { return "/var/run/hev-socks5-tunnel_{$uuid}.pid"; }
 
 // ─── Читаем config ────────────────────────────────────────────────────────────
 // Принимаем UUID инстанса как первый аргумент (передаётся из actions_xray.conf %1)
@@ -31,7 +31,7 @@ if ($ins) {
     }
 }
 
-$tunIface = (string)($inst->tun_interface ?? 'proxytun2socks0');
+$tunIface = (string)($inst->tun_interface ?? 'proxyhev2socks0');
 
 // ─── Uptime процесса по PID-файлу ────────────────────────────────────────────
 function proc_uptime(string $pidfile): ?int
@@ -150,7 +150,7 @@ if ($ifRc === 0) {
 
 // ─── Uptime процессов ─────────────────────────────────────────────────────────
 $xrayUptimeSecs = $instUuid !== '' ? proc_uptime(xray_pid_path($instUuid)) : null;
-$t2sUptimeSecs  = $instUuid !== '' ? proc_uptime(t2s_pid_path($instUuid))  : null;
+$hevUptimeSecs  = $instUuid !== '' ? proc_uptime(hev_pid_path($instUuid))  : null;
 
 // ─── Ping RTT до VPN-сервера ─────────────────────────────────────────────────
 $outboundJson = (string)($inst->outbound_config ?? '');
@@ -193,8 +193,8 @@ $result = [
     'bytes_out_hr'  => format_bytes($bytesOut),
     'xray_uptime'       => format_uptime($xrayUptimeSecs),
     'xray_uptime_secs'  => $xrayUptimeSecs,
-    'tun2socks_uptime'      => format_uptime($t2sUptimeSecs),
-    'tun2socks_uptime_secs' => $t2sUptimeSecs,
+    'hev-socks5-tunnel_uptime'      => format_uptime($hevUptimeSecs),
+    'hev-socks5-tunnel_uptime_secs' => $hevUptimeSecs,
     'server_address'        => $serverAddr,
     'ping_rtt'              => $pingRtt,
 ];

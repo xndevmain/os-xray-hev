@@ -1,0 +1,9 @@
+.tools/
+tests/output/
+__pycache__/
+dist/
+
+# Private local deployment notes (not part of the public fork)
+docs/audit-20261105.txt
+docs/subscription-migration-plan.txt
+docs/subscription-migration-status.txt

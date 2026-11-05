@@ -1,14 +1,13 @@
 <form>
-    <field>
-        <id>general.enabled</id>
-        <label>Enable Xray</label>
-        <type>checkbox</type>
-        <help>Enable the Xray-core VLESS+Reality VPN service (xray-core + tun2socks)</help>
-    </field>
-    <field>
-        <id>general.watchdog_enabled</id>
-        <label>Enable Watchdog</label>
-        <type>checkbox</type>
-        <help>Automatically restart xray-core and tun2socks if they crash (checked every minute via cron). Writes recovery events to /var/log/xray-watchdog.log.</help>
-    </field>
-</form>
+  <field>
+    <type>subheader</type>
+    <label>Instance</label>
+  </field>
+  <field>
+    <id>general.enabled</id>
+    <label>Enable Xray</label>
+    <type>checkbox</type>
+    <help>Enable the Xray and HevSocks5Tunnel service</help>
+  </field>
+
+  </form>

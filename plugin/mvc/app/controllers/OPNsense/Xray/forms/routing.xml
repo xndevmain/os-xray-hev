@@ -1,0 +1,38 @@
+<form><field>
+    <type>subheader</type>
+    <label>Firewall destination lists</label>
+  </field>
+  <field>
+    <id>general.firewall_geosite</id>
+    <label>Firewall geosite categories</label>
+    <type>textbox</type>
+    <help>Add one host list per row. The firewall alias is XRAY_HOSTS.</help>
+  </field>
+  <field>
+    <id>general.firewall_geoip</id>
+    <label>Firewall geoip categories</label>
+    <type>text</type>
+    <help>Comma-separated GeoIP categories for XRAY_HOSTS.</help>
+  </field>
+  <field><id>general.custom_domains</id><label>Custom domains and subdomains</label><type>textbox</type><help>One domain per line, for example example.com. Includes all subdomains. Matching DNS answers are added to XRAY_HOSTS.</help></field>
+  <field><id>general.custom_hosts</id><label>Custom exact hostnames</label><type>textbox</type><help>One exact hostname per line, for example api.example.com. Subdomains are not included.</help></field>
+  <field>
+    <type>subheader</type>
+    <label>Community data sources</label>
+  </field>
+  <field><id>general.geodata_auto_update</id><label>Automatically update community lists</label><type>checkbox</type><help>Download geosite and geoip daily at 04:23 firewall time and apply the selected categories and custom domains.</help></field>
+  <field>
+    <id>general.geosite_url</id>
+    <label>Community geosite.dat URL</label>
+    <type>text</type>
+    <help>HTTPS address of the binary community database.</help>
+    <advanced>true</advanced>
+  </field>
+  <field>
+    <id>general.geoip_url</id>
+    <label>Community geoip.dat URL</label>
+    <type>text</type>
+    <help>HTTPS address of the binary community database.</help>
+    <advanced>true</advanced>
+  </field>
+</form>
