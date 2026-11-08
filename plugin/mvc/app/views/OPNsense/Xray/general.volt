@@ -27,6 +27,7 @@
     </div>
     <div id="routing" class="tab-pane fade">
         {{ partial("layout_partials/base_form", {'fields': routingForm, 'id': 'frm_routing_settings'}) }}
+        {{ partial('OPNsense/Xray/partials/tab_routing_lists') }}
         <table id="communityControls" class="table table-condensed opnsense_standard_table">
             <tbody><tr><td><label for="geositeSource">{{ xlang._('Geosite provider') }}</label></td><td colspan="2">
                 <select id="geositeSource" class="form-control" style="width:100%;max-width:48em">

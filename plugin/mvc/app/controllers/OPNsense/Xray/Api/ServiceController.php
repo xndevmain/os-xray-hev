@@ -27,6 +27,16 @@ class ServiceController extends ApiMutableServiceControllerBase
         return is_array($data) ? $data : ['result' => 'failed', 'message' => 'No valid response from firewall list importer'];
     }
 
+    public function ipListsAction()
+    {
+        if (!$this->request->isPost()) return ['result' => 'failed', 'message' => 'POST required'];
+        session_write_close();
+        $force = $this->request->getPost('force', 'int', 0) === 1;
+        $output = (new Backend())->configdRun('xray iplistsupdate' . ($force ? ' force' : ''));
+        $data = json_decode(trim($output), true);
+        return is_array($data) ? $data : ['result' => 'failed', 'message' => 'No valid response from routing list updater'];
+    }
+
     public function cancelGeodataAction()
     {
         if (!$this->request->isPost()) return ['result' => 'failed', 'message' => 'POST required'];
@@ -284,6 +294,106 @@ class ServiceController extends ApiMutableServiceControllerBase
         $data = json_decode((new Backend())->configdpRun('xray testsite', [strtolower($host)]), true);
         return is_array($data) ? $data : ['result'=>'failed', 'message'=>'No response from site test'];
     }
+    public function setupListRuleAction($uuid = '')
+    {
+        if (!$this->request->isPost()) return ['result'=>'failed', 'message'=>'POST required'];
+        if (!preg_match('/^[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$/D', (string)$uuid)) {
+            return ['result'=>'failed', 'message'=>'Invalid routing list UUID'];
+        }
+        $config = \OPNsense\Core\Config::getInstance();
+        $config->lock();
+        try {
+            $list = null;
+            foreach ((new \OPNsense\Xray\RoutingList())->list->iterateItems() as $key => $node) {
+                if ($key === $uuid) { $list = $node; break; }
+            }
+            if ($list === null || (string)$list->enabled !== '1') throw new \RuntimeException('Enable and apply the routing list first');
+            $kind = (string)($list->kind ?? 'ip');
+            if (!in_array($kind, ['ip', 'domain'], true)) $kind = 'ip';
+            $alias = 'XRAY_' . substr(str_replace('-', '', strtolower($uuid)), 0, 12);
+            $ports = [];
+            if ($kind === 'ip') {
+                foreach (preg_split('/[,\r\n]+/', (string)$list->ports) as $raw) {
+                    $range = trim($raw);
+                    if ($range === '') continue;
+                    $parts = explode(':', $range);
+                    if (count($parts) > 2) throw new \RuntimeException('Invalid destination port range');
+                    foreach ($parts as $port) if (!ctype_digit($port) || (int)$port < 1 || (int)$port > 65535) throw new \RuntimeException('Invalid destination port range');
+                    if (count($parts) === 2 && (int)$parts[0] > (int)$parts[1]) throw new \RuntimeException('Invalid destination port range');
+                    $ports[$range] = true;
+                }
+            }
+            // Domain lists match all protocols without port scoping; IP lists
+            // keep one UDP rule per configured port range (any protocol when
+            // none are configured).
+            $ports = $ports ? array_keys($ports) : [''];
+            $root = $config->object();
+            $instances = $root->OPNsense->xray->instances->instance ?? null;
+            if ($instances === null || count($instances) !== 1) throw new \RuntimeException('Exactly one tunnel is required');
+            $device = (string)$instances[0]->tun_interface;
+            $assigned = '';
+            foreach ($root->interfaces->children() as $key => $item) if ((string)$item->if === $device) $assigned = $key;
+            if (!$assigned || !isset($root->interfaces->lan)) throw new \RuntimeException('Configure the tunnel and LAN interfaces first');
+            $gateway = 'XRAY_' . strtoupper($assigned) . '_GW';
+            $found = false;
+            foreach ($root->OPNsense->Gateways->gateway_item ?? [] as $item) {
+                if ((string)$item->name === $gateway && (string)$item->interface === $assigned && (string)$item->disabled !== '1') $found = true;
+            }
+            if (!$found) throw new \RuntimeException('Create the tunnel gateway first');
+            $model = new \OPNsense\Firewall\Filter();
+            $missing = [];
+            foreach ($ports as $port) {
+                $exists = false;
+                foreach ($model->rules->rule->iterateItems() as $item) {
+                    if ((string)$item->interface === 'lan' && (string)$item->destination_net === $alias
+                        && (string)$item->gateway === $gateway && (string)$item->destination_port === $port
+                        && (string)$item->enabled === '1'
+                        && ($port === '' || (string)$item->protocol === 'UDP')) {
+                        $exists = true; break;
+                    }
+                }
+                if (!$exists) $missing[] = $port;
+            }
+            if (!$missing) return ['result'=>'failed', 'message'=>'The routing-list LAN rules already exist. Review their order in Firewall Rules.'];
+            $position = 1;
+            $allowPosition = null;
+            foreach ($model->rules->rule->iterateItems() as $rule) {
+                $sequence = (int)(string)$rule->sequence;
+                $position = max($position, $sequence + 10);
+                if ((string)$rule->interface === 'lan' && (string)$rule->enabled === '1'
+                    && (string)$rule->action === 'pass' && (string)$rule->direction === 'in'
+                    && in_array((string)$rule->ipprotocol, ['inet', 'inet46'], true)
+                    && (string)$rule->source_net === 'lan' && (string)$rule->destination_net === 'any'
+                    && in_array((string)$rule->protocol, ['', 'any'], true)
+                    && in_array((string)$rule->destination_port, ['', 'any'], true)) {
+                    $allowPosition = $allowPosition === null ? $sequence : min($allowPosition, $sequence);
+                }
+            }
+            if ($allowPosition !== null) {
+                $position = $allowPosition;
+                $shift = count($missing) * 10;
+                foreach ($model->rules->rule->iterateItems() as $rule) {
+                    if ((int)(string)$rule->sequence >= $position) $rule->sequence = (string)((int)(string)$rule->sequence + $shift);
+                }
+            }
+            $description = \OPNsense\Xray\RoutingListRule::description($kind, (string)$list->name, $alias);
+            foreach ($missing as $index => $port) {
+                $item = $model->rules->rule->Add();
+                $nodes = ['sequence'=>(string)($position + $index * 10),'enabled'=>'1','action'=>'pass','quick'=>'1','interface'=>'lan',
+                    'direction'=>'in','ipprotocol'=>'inet','source_net'=>'lan','destination_net'=>$alias,
+                    'gateway'=>$gateway,'description'=>$description];
+                if ($port !== '') { $nodes['protocol'] = 'UDP'; $nodes['destination_port'] = $port; }
+                $item->setNodes($nodes);
+            }
+            foreach ($model->performValidation() as $error) throw new \RuntimeException((string)$error);
+            $model->serializeToConfig();
+            $config->save();
+            return ['result'=>'saved', 'count'=>count($missing), 'alias'=>$alias];
+        } catch (\Throwable $error) {
+            return ['result'=>'failed', 'message'=>$error->getMessage()];
+        } finally { $config->unlock(); }
+    }
+
     public function setupRuleAction()
     {
         if (!$this->request->isPost()) return ['result'=>'failed', 'message'=>'POST required'];
@@ -291,8 +401,8 @@ class ServiceController extends ApiMutableServiceControllerBase
         $config->lock();
         try {
             $root = $config->object();
-            $instances = $root->OPNsense->xray->instances->instance;
-            if (count($instances) !== 1) throw new \RuntimeException('Exactly one tunnel is required');
+            $instances = $root->OPNsense->xray->instances->instance ?? null;
+            if ($instances === null || count($instances) !== 1) throw new \RuntimeException('Exactly one tunnel is required');
             $device = (string)$instances[0]->tun_interface;
             $assigned = '';
             foreach ($root->interfaces->children() as $key=>$item) if ((string)$item->if === $device) $assigned = $key;

@@ -6,7 +6,7 @@ This is a fork of [MrTheory/os-xray](https://github.com/MrTheory/os-xray), origi
 
 [Русская инструкция](README.ru.md) · [Audit report](docs/PUBLIC-AUDIT.txt) · [Security and limitations](docs/SECURITY.txt)
 
-**Status: 4.0.0-beta.1.** Tested host: OPNsense 26.7, FreeBSD 15.1 amd64, PHP 8.5, Xray 26.10.31, HevSocks5Tunnel 2.19.3 and Unbound 1.25.1. Other versions are not claimed supported. Use a configuration backup and retain console access.
+**Status: 4.2.0-beta.1.** Tested host: OPNsense 26.7, FreeBSD 15.1 amd64, PHP 8.5, Xray 26.10.31, HevSocks5Tunnel 2.19.3 and Unbound 1.25.1. Other versions are not claimed supported. Use a configuration backup and retain console access.
 
 ## Changes in this fork
 
@@ -15,6 +15,7 @@ This is a fork of [MrTheory/os-xray](https://github.com/MrTheory/os-xray), origi
 - Per-server enabled state survives updates and renames. New servers are disabled; removed servers retain a tombstone. Up to 32 selected distinct servers and 1024 catalog records.
 - Subscription refresh schedules, bounded HTTPS downloads with public-address/redirect checks, runtime validation and activation rollback.
 - A Routing tab for geosite/geoip categories and custom domain/hostname lists. Unbound adds DNS answers to the external `XRAY_HOSTS` PF alias; **OPNsense firewall rules decide which traffic enters the tunnel**.
+- Multiple native downloadable routing entries of two kinds. IP entries combine up to 16 HTTPS IP/CIDR feeds and inline networks into their own stable external alias; domain entries combine up to 16 HTTPS suffix-domain feeds (IDNA/punycode normalized) and inline domains that Unbound learns into the alias. A Discord voice preset and port-scoped LAN-rule helper are included; deleting a domain list also removes its helper rules, cache, managed alias and learned broker state.
 - Interface, gateway and rule setup helpers, endpoint checks, native tables and EN/RU localization.
 
 ## Installation
@@ -33,9 +34,10 @@ The installer backs up existing files/configuration, checks models/templates bef
 1. Open **VPN → Xray → Subscriptions**, add a named HTTPS URL; the initial download starts immediately. Alternatively import links/files in **Endpoints**.
 2. Enable the required endpoints; new subscription servers are disabled by default. Click **Apply**.
 3. In **General**, enable Xray and configure the tunnel. Create/assign its interface, then its peer gateway. For `/30` assignments the helper chooses the other usable address.
-4. In **Routing**, download community databases, choose categories/custom domains, and click **Apply Firewall Lists**.
-5. Review the LAN rule using destination `XRAY_HOSTS` and the tunnel gateway. It must precede a generic LAN allow rule while retaining earlier restrictions. The helper saves a rule; review and apply it in the native firewall UI.
-6. Clients must use OPNsense Unbound. Verify both endpoint health and the actual LAN → firewall → TUN path.
+4. In **Routing**, download community databases, choose categories/custom domains, and click **Apply Firewall Lists**. Add any number of **Downloaded routing lists** of kind IP or Domain; each entry may combine several source URLs. Use **Download and apply all** to refresh their native aliases.
+5. For a downloaded list, use its filter button to create native LAN rules. When destination UDP ports are configured, the helper creates one scoped rule per range; review and apply them in the standard Firewall UI.
+6. Review the LAN rule using destination `XRAY_HOSTS` and the tunnel gateway. It must precede a generic LAN allow rule while retaining earlier restrictions. The helper saves a rule; review and apply it in the native firewall UI.
+7. Clients must use OPNsense Unbound for domain-driven lists. Verify both endpoint health and the actual LAN → firewall → TUN path.
 
 A subscription's refresh interval is checked every five minutes. Turning off an endpoint is persistent. Changing credentials/address/transport creates a new disabled identity. Missing servers are excluded; returning identities retain their previous choice. Existing manual endpoints are not automatically assigned to a subscription because old imports did not retain source URLs. Disabling the last selected endpoint requires disabling Xray first.
 

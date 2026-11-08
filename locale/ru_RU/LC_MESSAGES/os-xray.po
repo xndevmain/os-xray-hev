@@ -407,3 +407,108 @@ msgstr "Остановить туннель"
 
 msgid "Restart the tunnel"
 msgstr "Перезапустить туннель"
+
+msgid "Downloaded routing lists"
+msgstr "Загружаемые списки маршрутизации"
+
+msgid "Sources"
+msgstr "Источники"
+
+msgid "Firewall alias"
+msgstr "Алиас firewall"
+
+msgid "Entries"
+msgstr "Записи"
+
+msgid "UDP ports"
+msgstr "UDP-порты"
+
+msgid "Updated"
+msgstr "Обновлён"
+
+msgid "No downloaded routing lists configured."
+msgstr "Загружаемые списки маршрутизации не настроены."
+
+msgid "Add routing list"
+msgstr "Добавить список маршрутизации"
+
+msgid "Download and apply all"
+msgstr "Загрузить и применить все"
+
+msgid "Each entry may combine several HTTPS text lists with inline values. IP lists merge feeds and inline IP/CIDR networks into their alias; domain lists learn DNS answers for suffix domains. The plugin creates one native external alias per entry; firewall rules remain visible and editable in the normal OPNsense UI."
+msgstr "Одна запись может объединять несколько текстовых HTTPS-списков со встроенными значениями. IP-списки объединяют источники и сети IP/CIDR в алиас; доменные списки обучают алиас через DNS-ответы для суффиксных доменов. Плагин создаёт для каждой записи нативный внешний алиас; правила остаются видимыми и редактируемыми в обычном интерфейсе OPNsense."
+
+msgid "Routing list"
+msgstr "Список маршрутизации"
+
+msgid "Preset"
+msgstr "Предустановка"
+
+msgid "Custom"
+msgstr "Свой"
+
+msgid "Discord voice"
+msgstr "Голос Discord"
+
+msgid "HTTPS list URLs"
+msgstr "HTTPS-адреса списков"
+
+msgid "One plain-text IP/CIDR list URL per line; up to 16 sources are combined."
+msgstr "По одному URL текстового списка IP/CIDR на строку; объединяется до 16 источников."
+
+msgid "Inline IP/CIDR networks"
+msgstr "Встроенные сети IP/CIDR"
+
+msgid "Destination UDP ports"
+msgstr "UDP-порты назначения"
+
+msgid "Optional rule-helper metadata; one port or range such as 19294:19344 per line."
+msgstr "Необязательные данные для создания правила: один порт или диапазон вроде 19294:19344 на строку."
+
+msgid "Refresh interval (minutes)"
+msgstr "Интервал обновления (минуты)"
+
+msgid "Routing list not found"
+msgstr "Список маршрутизации не найден"
+
+msgid "Saved. Download and apply the lists."
+msgstr "Сохранено. Загрузите и примените списки."
+
+msgid "Create firewall rule"
+msgstr "Создать правило firewall"
+
+msgid "Firewall rule saved. Review its order and apply it in Firewall Rules."
+msgstr "Правило firewall сохранено. Проверьте его порядок и примените изменения в Firewall Rules."
+
+msgid "Delete this routing list? Helper-created firewall rules and the managed alias are removed; rules you created yourself are kept."
+msgstr "Удалить этот список маршрутизации? Служебные правила firewall и управляемый алиас будут удалены; созданные вами правила сохранятся."
+
+msgid "Delete this IP routing list? Existing firewall rules are kept until you remove or update them."
+msgstr "Удалить этот IP-список маршрутизации? Существующие правила firewall сохранятся, пока вы не удалите или не измените их."
+
+msgid "Deleted. Apply firewall lists to remove the managed alias."
+msgstr "Удалено. Примените списки firewall, чтобы убрать управляемый алиас."
+
+msgid "Downloading and applying routing lists..."
+msgstr "Загрузка и применение списков маршрутизации..."
+
+msgid "Kind"
+msgstr "Тип"
+
+msgid "Domain"
+msgstr "Доменный"
+
+msgid "IP lists route static addresses; domain lists learn DNS answers through Unbound."
+msgstr "IP-списки маршрутизируют статические адреса; доменные списки обучаются через DNS-ответы Unbound."
+
+msgid "One plain-text suffix-domain list URL per line; up to 16 sources are combined."
+msgstr "По одному URL текстового списка суффиксных доменов на строку; объединяется до 16 источников."
+
+msgid "Inline domains"
+msgstr "Встроенные домены"
+
+msgid "One suffix domain per line, for example example.com; includes all subdomains. Use punycode (xn--…) for internationalized names."
+msgstr "По одному суффиксному домену на строку, например example.com; включает все поддомены. Для национальных доменов используйте punycode (xn--…)."
+
+msgid "Deleted and applied."
+msgstr "Удалено и применено."

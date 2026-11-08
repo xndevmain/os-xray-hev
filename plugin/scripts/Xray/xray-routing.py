@@ -1,6 +1,7 @@
 #!/usr/local/bin/python3
 """Root broker for Unbound -> external OPNsense alias updates."""
 import argparse
+import hashlib
 import ipaddress
 import json
 import os
@@ -32,7 +33,16 @@ def load_routes(config):
             raise ValueError('Invalid managed alias name')
         if table in routes:
             raise ValueError('Managed alias name collision')
-        routes[table] = (DomainMatcher(geosite, route['geosite'], route.get('custom_domains', ''), route.get('custom_hosts', '')), networks(geoip, route['geoip']))
+        static = networks(geoip, route['geoip'])
+        for value in route.get('static_ips', []):
+            try:
+                static.append(str(ipaddress.ip_network(value, strict=False)))
+            except (TypeError, ValueError) as error:
+                raise ValueError('Invalid static network') from error
+        routes[table] = (
+            DomainMatcher(geosite, route['geosite'], route.get('custom_domains', ''), route.get('custom_hosts', '')),
+            sorted(set(static), key=lambda value: (ipaddress.ip_network(value).version, ipaddress.ip_network(value))),
+        )
     return routes
 
 
@@ -42,11 +52,27 @@ class Broker:
         self.db = sqlite3.connect(database)
         self.db.execute('CREATE TABLE IF NOT EXISTS learned (alias TEXT, ip TEXT, expires REAL, PRIMARY KEY(alias,ip))')
         self.db.execute('CREATE TABLE IF NOT EXISTS revisions (alias TEXT PRIMARY KEY, signature TEXT)')
-        for table, (matcher, _) in routes.items():
+        for table, (matcher, static) in routes.items():
+            signature = matcher.signature
+            if static:
+                digest = hashlib.sha256('\n'.join(sorted(set(static))).encode()).hexdigest()
+                signature += ':' + digest
             previous = self.db.execute('SELECT signature FROM revisions WHERE alias=?', (table,)).fetchone()
-            if previous != (matcher.signature,):
+            if previous != (signature,):
                 self.db.execute('DELETE FROM learned WHERE alias=?', (table,))
-                self.db.execute('INSERT OR REPLACE INTO revisions VALUES(?,?)', (table, matcher.signature))
+                self.db.execute('INSERT OR REPLACE INTO revisions VALUES(?,?)', (table, signature))
+        # Purge orphaned rows for aliases no longer in the active routes (for
+        # example after their routing list was deleted). The apply path backs
+        # the database up before switching configs, so a failed apply still
+        # restores the previous learned state.
+        active = sorted(routes)
+        if active:
+            placeholders = ','.join('?' for _ in active)
+            self.db.execute(f'DELETE FROM learned WHERE alias NOT IN ({placeholders})', active)
+            self.db.execute(f'DELETE FROM revisions WHERE alias NOT IN ({placeholders})', active)
+        else:
+            self.db.execute('DELETE FROM learned')
+            self.db.execute('DELETE FROM revisions')
         self.db.commit()
 
     def pf(self, table, action, addresses):

@@ -2,7 +2,7 @@
 /** Read-only preflight; any model serialization below changes this process's memory only. */
 require_once 'config.inc';
 $root = dirname(__DIR__);
-foreach (['Catalog','EndpointCatalog','CatalogStore','Instance','General'] as $name) {
+foreach (['Catalog','EndpointCatalog','CatalogStore','Instance','General','RoutingList'] as $name) {
     require_once $root . '/plugin/mvc/app/models/OPNsense/Xray/' . $name . '.php';
 }
 $cfg = \OPNsense\Core\Config::getInstance()->object();
