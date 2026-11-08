@@ -61,6 +61,18 @@ class Broker:
             if previous != (signature,):
                 self.db.execute('DELETE FROM learned WHERE alias=?', (table,))
                 self.db.execute('INSERT OR REPLACE INTO revisions VALUES(?,?)', (table, signature))
+        # Purge orphaned rows for aliases no longer in the active routes (for
+        # example after their routing list was deleted). The apply path backs
+        # the database up before switching configs, so a failed apply still
+        # restores the previous learned state.
+        active = sorted(routes)
+        if active:
+            placeholders = ','.join('?' for _ in active)
+            self.db.execute(f'DELETE FROM learned WHERE alias NOT IN ({placeholders})', active)
+            self.db.execute(f'DELETE FROM revisions WHERE alias NOT IN ({placeholders})', active)
+        else:
+            self.db.execute('DELETE FROM learned')
+            self.db.execute('DELETE FROM revisions')
         self.db.commit()
 
     def pf(self, table, action, addresses):

@@ -408,8 +408,8 @@ msgstr "Остановить туннель"
 msgid "Restart the tunnel"
 msgstr "Перезапустить туннель"
 
-msgid "Downloaded IP routing lists"
-msgstr "Загружаемые списки IP-маршрутизации"
+msgid "Downloaded routing lists"
+msgstr "Загружаемые списки маршрутизации"
 
 msgid "Sources"
 msgstr "Источники"
@@ -426,20 +426,20 @@ msgstr "UDP-порты"
 msgid "Updated"
 msgstr "Обновлён"
 
-msgid "No downloaded IP lists configured."
-msgstr "Загружаемые IP-списки не настроены."
+msgid "No downloaded routing lists configured."
+msgstr "Загружаемые списки маршрутизации не настроены."
 
-msgid "Add IP list"
-msgstr "Добавить IP-список"
+msgid "Add routing list"
+msgstr "Добавить список маршрутизации"
 
 msgid "Download and apply all"
 msgstr "Загрузить и применить все"
 
-msgid "Each entry may combine several HTTPS text lists and inline IP/CIDR networks. The plugin creates one native external alias per entry; firewall rules remain visible and editable in the normal OPNsense UI."
-msgstr "Одна запись может объединять несколько текстовых HTTPS-списков и встроенные сети IP/CIDR. Плагин создаёт для каждой записи нативный внешний алиас; правила остаются видимыми и редактируемыми в обычном интерфейсе OPNsense."
+msgid "Each entry may combine several HTTPS text lists with inline values. IP lists merge feeds and inline IP/CIDR networks into their alias; domain lists learn DNS answers for suffix domains. The plugin creates one native external alias per entry; firewall rules remain visible and editable in the normal OPNsense UI."
+msgstr "Одна запись может объединять несколько текстовых HTTPS-списков со встроенными значениями. IP-списки объединяют источники и сети IP/CIDR в алиас; доменные списки обучают алиас через DNS-ответы для суффиксных доменов. Плагин создаёт для каждой записи нативный внешний алиас; правила остаются видимыми и редактируемыми в обычном интерфейсе OPNsense."
 
-msgid "IP routing list"
-msgstr "Список IP-маршрутизации"
+msgid "Routing list"
+msgstr "Список маршрутизации"
 
 msgid "Preset"
 msgstr "Предустановка"
@@ -468,8 +468,8 @@ msgstr "Необязательные данные для создания пра
 msgid "Refresh interval (minutes)"
 msgstr "Интервал обновления (минуты)"
 
-msgid "IP list not found"
-msgstr "IP-список не найден"
+msgid "Routing list not found"
+msgstr "Список маршрутизации не найден"
 
 msgid "Saved. Download and apply the lists."
 msgstr "Сохранено. Загрузите и примените списки."
@@ -480,11 +480,35 @@ msgstr "Создать правило firewall"
 msgid "Firewall rule saved. Review its order and apply it in Firewall Rules."
 msgstr "Правило firewall сохранено. Проверьте его порядок и примените изменения в Firewall Rules."
 
-msgid "Delete this routing list? Existing firewall rules are not removed."
-msgstr "Удалить этот список маршрутизации? Существующие правила firewall не удаляются."
+msgid "Delete this routing list? Helper-created firewall rules and the managed alias are removed; rules you created yourself are kept."
+msgstr "Удалить этот список маршрутизации? Служебные правила firewall и управляемый алиас будут удалены; созданные вами правила сохранятся."
+
+msgid "Delete this IP routing list? Existing firewall rules are kept until you remove or update them."
+msgstr "Удалить этот IP-список маршрутизации? Существующие правила firewall сохранятся, пока вы не удалите или не измените их."
 
 msgid "Deleted. Apply firewall lists to remove the managed alias."
 msgstr "Удалено. Примените списки firewall, чтобы убрать управляемый алиас."
 
-msgid "Downloading and applying IP lists..."
-msgstr "Загрузка и применение IP-списков..."
+msgid "Downloading and applying routing lists..."
+msgstr "Загрузка и применение списков маршрутизации..."
+
+msgid "Kind"
+msgstr "Тип"
+
+msgid "Domain"
+msgstr "Доменный"
+
+msgid "IP lists route static addresses; domain lists learn DNS answers through Unbound."
+msgstr "IP-списки маршрутизируют статические адреса; доменные списки обучаются через DNS-ответы Unbound."
+
+msgid "One plain-text suffix-domain list URL per line; up to 16 sources are combined."
+msgstr "По одному URL текстового списка суффиксных доменов на строку; объединяется до 16 источников."
+
+msgid "Inline domains"
+msgstr "Встроенные домены"
+
+msgid "One suffix domain per line, for example example.com; includes all subdomains. Use punycode (xn--…) for internationalized names."
+msgstr "По одному суффиксному домену на строку, например example.com; включает все поддомены. Для национальных доменов используйте punycode (xn--…)."
+
+msgid "Deleted and applied."
+msgstr "Удалено и применено."

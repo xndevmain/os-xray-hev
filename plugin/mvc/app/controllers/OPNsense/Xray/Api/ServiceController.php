@@ -34,7 +34,7 @@ class ServiceController extends ApiMutableServiceControllerBase
         $force = $this->request->getPost('force', 'int', 0) === 1;
         $output = (new Backend())->configdRun('xray iplistsupdate' . ($force ? ' force' : ''));
         $data = json_decode(trim($output), true);
-        return is_array($data) ? $data : ['result' => 'failed', 'message' => 'No valid response from IP list updater'];
+        return is_array($data) ? $data : ['result' => 'failed', 'message' => 'No valid response from routing list updater'];
     }
 
     public function cancelGeodataAction()
@@ -308,17 +308,24 @@ class ServiceController extends ApiMutableServiceControllerBase
                 if ($key === $uuid) { $list = $node; break; }
             }
             if ($list === null || (string)$list->enabled !== '1') throw new \RuntimeException('Enable and apply the routing list first');
+            $kind = (string)($list->kind ?? 'ip');
+            if (!in_array($kind, ['ip', 'domain'], true)) $kind = 'ip';
             $alias = 'XRAY_' . substr(str_replace('-', '', strtolower($uuid)), 0, 12);
             $ports = [];
-            foreach (preg_split('/[,\r\n]+/', (string)$list->ports) as $raw) {
-                $range = trim($raw);
-                if ($range === '') continue;
-                $parts = explode(':', $range);
-                if (count($parts) > 2) throw new \RuntimeException('Invalid destination port range');
-                foreach ($parts as $port) if (!ctype_digit($port) || (int)$port < 1 || (int)$port > 65535) throw new \RuntimeException('Invalid destination port range');
-                if (count($parts) === 2 && (int)$parts[0] > (int)$parts[1]) throw new \RuntimeException('Invalid destination port range');
-                $ports[$range] = true;
+            if ($kind === 'ip') {
+                foreach (preg_split('/[,\r\n]+/', (string)$list->ports) as $raw) {
+                    $range = trim($raw);
+                    if ($range === '') continue;
+                    $parts = explode(':', $range);
+                    if (count($parts) > 2) throw new \RuntimeException('Invalid destination port range');
+                    foreach ($parts as $port) if (!ctype_digit($port) || (int)$port < 1 || (int)$port > 65535) throw new \RuntimeException('Invalid destination port range');
+                    if (count($parts) === 2 && (int)$parts[0] > (int)$parts[1]) throw new \RuntimeException('Invalid destination port range');
+                    $ports[$range] = true;
+                }
             }
+            // Domain lists match all protocols without port scoping; IP lists
+            // keep one UDP rule per configured port range (any protocol when
+            // none are configured).
             $ports = $ports ? array_keys($ports) : [''];
             $root = $config->object();
             $instances = $root->OPNsense->xray->instances->instance ?? null;
@@ -369,7 +376,7 @@ class ServiceController extends ApiMutableServiceControllerBase
                     if ((int)(string)$rule->sequence >= $position) $rule->sequence = (string)((int)(string)$rule->sequence + $shift);
                 }
             }
-            $description = substr('Xray IP list: ' . (string)$list->name, 0, 255);
+            $description = \OPNsense\Xray\RoutingListRule::description($kind, (string)$list->name, $alias);
             foreach ($missing as $index => $port) {
                 $item = $model->rules->rule->Add();
                 $nodes = ['sequence'=>(string)($position + $index * 10),'enabled'=>'1','action'=>'pass','quick'=>'1','interface'=>'lan',

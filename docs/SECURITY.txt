@@ -20,10 +20,13 @@ A broker/PF error or a regex deadline does not guarantee suppression of the DNS
 response. Do not depend on this mechanism alone for leak prevention. Configure
 explicit firewall policies if unwanted direct traffic must always be blocked.
 Selected GeoIP networks may contain local/reserved ranges; review categories.
-Downloaded IP lists are trusted routing inputs: a compromised source can redirect
-matching destinations into the tunnel. Sources are HTTPS-only, public-address pinned,
-size/entry bounded and atomically cached, but administrators must still review feed
-ownership and scope. A failed refresh keeps the last working cache.
+Downloaded routing lists (IP and domain) are trusted routing inputs: a
+compromised source can redirect matching destinations into the tunnel. Sources
+are HTTPS-only, public-address pinned, size/entry bounded and atomically cached,
+but administrators must still review feed ownership and scope. A failed refresh
+keeps the last working cache. Domain feeds are normalized to punycode; invalid
+entries are rejected, never silently skipped. Deleting a domain list removes
+only plugin-tagged helper rules and applies the change immediately.
 
 A successful HTTPS proxy probe is not proof of UDP, IPv6 or the complete LAN/TUN
 path. Multi-proxy selection depends on health observations and is not instantaneous.

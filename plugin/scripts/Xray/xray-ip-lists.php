@@ -67,6 +67,7 @@ function xray_update_ip_list(
     ?int $now = null
 ): array {
     $alias = xray_route_alias((string)($list['uuid'] ?? ''));
+    $kind = xray_list_kind($list);
     $urls = xray_list_urls((string)($list['urls'] ?? ''));
     $refresh = max(30, min(10080, (int)($list['refresh'] ?? 1440)));
     $now = $now ?? time();
@@ -76,10 +77,10 @@ function xray_update_ip_list(
     $cache = $cacheDir . '/' . $alias . '.json';
     if (!$urls) {
         // A configured list without URLs must not keep merging a stale
-        // downloaded cache into firewall routes; converge it atomically to
-        // empty. This runs before the freshness shortcut so a just-emptied
-        // list cannot return early on its still-fresh stale cache.
-        $payload = "[]\n";
+        // downloaded cache into firewall routes; converge it atomically to an
+        // empty typed cache. This runs before the freshness shortcut so a
+        // just-emptied list cannot return early on its still-fresh stale cache.
+        $payload = json_encode(['kind' => $kind, 'entries' => []], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
         $previous = is_file($cache) ? file_get_contents($cache) : null;
         $changed = $previous !== null && $previous !== $payload;
         if ($changed) {
@@ -93,22 +94,33 @@ function xray_update_ip_list(
                 throw new RuntimeException('Cannot activate routing-list cache');
             }
         }
-        return ['alias' => $alias, 'changed' => $changed, 'skipped' => true, 'count' => 0];
+        return ['alias' => $alias, 'kind' => $kind, 'changed' => $changed, 'skipped' => true, 'count' => 0];
     }
-    if (!$force && is_file($cache) && $now - filemtime($cache) < $refresh * 60) {
-        $existing = json_decode((string)file_get_contents($cache), true);
-        return ['alias' => $alias, 'changed' => false, 'skipped' => true,
-            'count' => is_array($existing) ? count($existing) : 0];
+    // A cache from another kind (or unreadable) is never merged: skip the
+    // freshness shortcut and overwrite it from the configured sources.
+    $cached = null;
+    try {
+        $cached = xray_read_list_cache($cache, $kind);
+    } catch (RuntimeException $ignored) {
     }
-    $networks = [];
+    if (!$force && $cached !== null && $now - filemtime($cache) < $refresh * 60) {
+        return ['alias' => $alias, 'kind' => $kind, 'changed' => false, 'skipped' => true,
+            'count' => count($cached['entries'])];
+    }
+    $entries = [];
     foreach ($urls as $url) {
         $parsed = $parse($fetch($url));
         if (!is_array($parsed)) throw new RuntimeException('Routing-list parser returned invalid data');
-        $networks = array_merge($networks, $parsed);
-        if (count($networks) > 65536) throw new RuntimeException('Routing list exceeds 65536 entries');
+        $entries = array_merge($entries, $parsed);
+        if (count($entries) > 65536) throw new RuntimeException('Routing list exceeds 65536 entries');
     }
-    $networks = xray_sort_networks($networks);
-    $payload = json_encode($networks, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
+    if ($kind === 'domain') {
+        $entries = array_values(array_unique(array_map('strval', $entries)));
+        sort($entries, SORT_STRING);
+    } else {
+        $entries = xray_sort_networks($entries);
+    }
+    $payload = json_encode(['kind' => $kind, 'entries' => $entries], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
     $previous = is_file($cache) ? file_get_contents($cache) : null;
     $pending = $cache . '.new';
     if (file_put_contents($pending, $payload, LOCK_EX) === false) {
@@ -119,7 +131,8 @@ function xray_update_ip_list(
         @unlink($pending);
         throw new RuntimeException('Cannot activate routing-list cache');
     }
-    return ['alias' => $alias, 'changed' => $previous !== $payload, 'skipped' => false, 'count' => count($networks)];
+    return ['alias' => $alias, 'kind' => $kind, 'changed' => $previous !== $payload,
+        'skipped' => false, 'count' => count($entries)];
 }
 
 function xray_prune_ip_list_cache(string $cacheDir, array $keepAliases): array

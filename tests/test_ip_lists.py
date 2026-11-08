@@ -49,7 +49,7 @@ class IpListParserTests(unittest.TestCase):
         self.assertEqual(model.findtext('mount'), '//OPNsense/xray/routinglists')
         fields = {node.tag for node in model.findall('./items/list/*')}
         self.assertEqual(fields, {
-            'enabled', 'name', 'preset', 'urls', 'networks', 'ports', 'refresh'})
+            'enabled', 'name', 'preset', 'kind', 'urls', 'networks', 'domains', 'ports', 'refresh'})
         preset = model.find('./items/list/preset/OptionValues')
         self.assertIsNotNone(preset)
         self.assertEqual({node.tag for node in ([] if preset is None else list(preset))}, {'custom', 'discord_voice'})
@@ -117,10 +117,11 @@ class IpListParserTests(unittest.TestCase):
         update = (ROOT / 'plugin/scripts/Xray/update-ip-lists.php').read_text(encoding='utf-8')
         controller = (ROOT / 'plugin/mvc/app/controllers/OPNsense/Xray/Api/RoutingListController.php').read_text(encoding='utf-8')
         service = (ROOT / 'plugin/mvc/app/controllers/OPNsense/Xray/Api/ServiceController.php').read_text(encoding='utf-8')
-        # Empty-URL lists converge their stale downloaded cache to empty before
-        # the freshness shortcut can return early, and report the change.
-        self.assertLess(lists.index('if (!$urls)'), lists.index('if (!$force && is_file($cache)'))
-        self.assertIn('"[]\\n"', lists)
+        # Empty-URL lists converge their stale downloaded cache to an empty
+        # typed cache before the freshness shortcut can return early, and
+        # report the change.
+        self.assertLess(lists.index('if (!$urls)'), lists.index('if (!$force && $cached !== null'))
+        self.assertIn("'kind' => $kind, 'entries' => []", lists)
         # The updater passes the explicit asset directory instead of a possibly
         # missing XRAY_LOCATION_ASSET environment variable.
         self.assertIn("is_dir('/usr/local/share/xray/current')", update)

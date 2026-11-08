@@ -2,11 +2,18 @@
 <model>
     <mount>//OPNsense/xray/routinglists</mount>
     <description>Xray downloadable routing lists</description>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <items>
         <list type="ArrayField">
             <enabled type="BooleanField"><Default>1</Default><Required>Y</Required></enabled>
             <name type="TextField"><Required>Y</Required></name>
+            <kind type="OptionField">
+                <Default>ip</Default><Required>Y</Required>
+                <OptionValues>
+                    <ip>IP</ip>
+                    <domain>Domain</domain>
+                </OptionValues>
+            </kind>
             <preset type="OptionField">
                 <Default>custom</Default><Required>Y</Required>
                 <OptionValues>
@@ -16,6 +23,7 @@
             </preset>
             <urls type="TextField"><Required>N</Required></urls>
             <networks type="TextField"><Required>N</Required></networks>
+            <domains type="TextField"><Required>N</Required></domains>
             <ports type="TextField"><Required>N</Required></ports>
             <refresh type="IntegerField">
                 <Default>1440</Default><MinimumValue>30</MinimumValue><MaximumValue>10080</MaximumValue><Required>Y</Required>

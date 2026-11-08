@@ -197,6 +197,25 @@ class RoutingTests(unittest.TestCase):
             self.assertIn('192.0.2.4', calls[-1][1]['input'])
             restored.db.close()
 
+    def test_broker_purges_orphaned_learned_and_revision_rows(self):
+        table = 'XRAY_0123456789ab'
+        with tempfile.TemporaryDirectory() as directory:
+            path = str(Path(directory) / 'state.sqlite')
+            runner = lambda *args, **kwargs: None
+            broker = routing.Broker({table: (self.matcher, ['198.51.100.0/24'])}, path, runner)
+            broker.publish({'name': 'exact.example', 'records': [['192.0.2.4', 300]]})
+            self.assertEqual(broker.db.execute('SELECT COUNT(*) FROM learned').fetchone()[0], 1)
+            broker.db.close()
+            # A restart without that alias in the active routes (e.g. its list
+            # was deleted) must purge orphaned learned/revision rows.
+            broker = routing.Broker({'XRAY_HOSTS': (self.matcher, [])}, path, runner)
+            try:
+                self.assertEqual(broker.db.execute('SELECT COUNT(*) FROM learned').fetchone()[0], 0)
+                self.assertEqual(broker.db.execute('SELECT COUNT(*) FROM revisions WHERE alias=?', (table,)).fetchone()[0], 0)
+                self.assertEqual(broker.db.execute('SELECT COUNT(*) FROM revisions').fetchone()[0], 1)
+            finally:
+                broker.db.close()
+
     def test_real_community_files_when_available(self):
         for source, category in [(ROOT / '.tools/xray/geosite.dat', 'youtube'), (ROOT / '.tools/itdog-geosite.dat', 'russia-inside@geoblock')]:
             if source.exists():

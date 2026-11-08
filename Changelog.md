@@ -1,3 +1,12 @@
+## 4.2.0-beta.1 — downloadable domain routing lists
+
+- Extend native downloadable routing lists with a Domain kind: up to 16 HTTPS plain-text suffix-domain feeds plus inline domains per entry, normalized (lowercase, IDNA/punycode, wildcard/trailing-dot trimming) by a bounded parser with the same HTTPS-only, size- and entry-limited download path as IP lists.
+- Generalize the routing-list cache to a typed `{"kind":"ip|domain","entries":[...]}` object; legacy plain JSON arrays remain valid IP caches, kind mismatches never merge, and a kind change bypasses the freshness shortcut and overwrites the cache from the new sources.
+- Domain entries feed the Unbound/PF broker as suffix domains (`custom_domains`) and create one protocol-any/no-port LAN rule via the rule helper; IP entries keep the existing per-port UDP rules. Cache reads fail closed on corrupt or mismatched data.
+- Deleting a Domain entry removes its plugin-owned helper firewall rules via an alias-only ownership marker (`Xray domain list [XRAY_<id>]`, stable across renames; user rules on the same alias stay untouched), then runs a download-free `cleanup` updater mode that rebuilds routes from the retained caches, always reapplies firewall state and prunes orphan caches only after a successful apply. Cleanup failure restores the entry fail closed from the retained cache (no feed downloads), a failed final cleanup still reports `result=deleted` with `cleanup.applied=false` and invalidates the apply signature so the next scheduled update retries, and the broker purges orphaned learned/revision rows on restart.
+- Harden direct routing-list validation: inline `domains` are rejected on IP-kind lists, and an oversized cache reports a distinct error instead of a kind mismatch.
+- Rename user-facing labels to "routing lists"; keep configd action, API endpoint and cron names for compatibility. Version the RoutingList model as 1.1.0.
+
 ## 4.1.0-beta.1 — native downloadable IP routing lists
 
 - Add native CRUD for multiple IP routing entries in the Routing tab.

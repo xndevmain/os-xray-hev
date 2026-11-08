@@ -29,6 +29,71 @@ function xray_static_networks(string $value): array
     return $result;
 }
 
+function xray_list_kind(array $list): string
+{
+    $kind = strtolower(trim((string)($list['kind'] ?? '')));
+    if ($kind === '') return 'ip';
+    if (!in_array($kind, ['ip', 'domain'], true)) {
+        throw new InvalidArgumentException('Invalid routing list kind: ' . $kind);
+    }
+    return $kind;
+}
+
+function xray_static_domains(string $value): array
+{
+    // Inline domains use the same rules as the downloadable suffix lists:
+    // ASCII or punycode labels, at least two labels, no IPs or wildcards.
+    $result = [];
+    foreach (preg_split('/[\r\n]+/', $value) as $raw) {
+        $domain = trim($raw);
+        if ($domain === '') continue;
+        if (preg_match('/[\s,]/', $domain)) throw new InvalidArgumentException('Invalid inline domain: ' . $domain);
+        $domain = strtolower($domain);
+        if (str_starts_with($domain, '*.')) $domain = substr($domain, 2);
+        $domain = ltrim($domain, '.');
+        $domain = rtrim($domain, '.');
+        $labels = explode('.', $domain);
+        $valid = strlen($domain) <= 253 && count($labels) >= 2 && !preg_match('/[^a-z0-9.-]/D', $domain)
+            && !array_filter($labels, static fn(string $label): bool =>
+                !preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/D', $label));
+        if (!$valid || filter_var($domain, FILTER_VALIDATE_IP)) {
+            throw new InvalidArgumentException('Invalid inline domain: ' . $raw);
+        }
+        $result[] = $domain;
+    }
+    return array_values(array_unique($result));
+}
+
+function xray_read_list_cache(string $path, string $kind): ?array
+{
+    // Typed caches are {"kind":"ip|domain","entries":[...]}; plain JSON arrays
+    // written by older plugin versions are legacy IP caches. Anything else —
+    // including a kind mismatch — fails closed instead of merging.
+    if (!is_file($path)) return null;
+    try {
+        $data = json_decode((string)file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+    } catch (JsonException $error) {
+        throw new RuntimeException('Invalid cached routing list: ' . basename($path, '.json'));
+    }
+    if (is_array($data) && array_is_list($data)) {
+        $cachedKind = 'ip';
+        $entries = array_map('strval', $data);
+    } elseif (is_array($data) && isset($data['kind'], $data['entries']) && is_string($data['kind'])
+        && is_array($data['entries']) && array_is_list($data['entries'])) {
+        $cachedKind = $data['kind'];
+        $entries = array_map('strval', $data['entries']);
+    } else {
+        throw new RuntimeException('Invalid cached routing list: ' . basename($path, '.json'));
+    }
+    if ($cachedKind !== $kind) {
+        throw new RuntimeException('Cached routing list kind mismatch: ' . basename($path, '.json'));
+    }
+    if (count($entries) > 65536) {
+        throw new RuntimeException('Cached routing list exceeds 65536 entries: ' . basename($path, '.json'));
+    }
+    return ['kind' => $cachedKind, 'entries' => $entries];
+}
+
 function xray_firewall_routes_from(array $general, array $lists, string $assetDir, string $cacheDir): array
 {
     $routes = [[
@@ -43,14 +108,25 @@ function xray_firewall_routes_from(array $general, array $lists, string $assetDi
             continue;
         }
         $alias = xray_route_alias((string)($list['uuid'] ?? ''));
+        $kind = xray_list_kind($list);
+        $cached = xray_read_list_cache($cacheDir . '/' . $alias . '.json', $kind);
+        if ($kind === 'domain') {
+            // Domain lists are learned through DNS: inline suffix domains and
+            // the typed domain cache feed the matcher, never the PF table.
+            $domains = array_values(array_unique(array_merge(
+                xray_static_domains((string)($list['domains'] ?? '')),
+                $cached['entries'] ?? []
+            )));
+            sort($domains, SORT_STRING);
+            $routes[] = [
+                'table' => $alias, 'geosite' => '', 'geoip' => '',
+                'custom_domains' => implode("\n", $domains), 'custom_hosts' => '', 'static_ips' => [],
+            ];
+            continue;
+        }
         $static = xray_static_networks((string)($list['networks'] ?? ''));
-        $cache = $cacheDir . '/' . $alias . '.json';
-        if (is_file($cache)) {
-            $cached = json_decode((string)file_get_contents($cache), true, 512, JSON_THROW_ON_ERROR);
-            if (!is_array($cached) || !array_is_list($cached) || count($cached) > 65536) {
-                throw new RuntimeException('Invalid cached routing list: ' . $alias);
-            }
-            $static = array_merge($static, array_map('strval', $cached));
+        if ($cached !== null) {
+            $static = array_merge($static, $cached['entries']);
         }
         $static = array_values(array_unique($static));
         usort($static, static function (string $left, string $right): int {
@@ -126,6 +202,7 @@ function xray_firewall_routes(string $assetDir): array
         $lists[] = [
             'uuid' => (string)$item['uuid'], 'enabled' => (string)($item->enabled ?? '0'),
             'name' => (string)($item->name ?? ''), 'networks' => (string)($item->networks ?? ''),
+            'kind' => (string)($item->kind ?? 'ip'), 'domains' => (string)($item->domains ?? ''),
         ];
     }
     return xray_firewall_routes_from($settings, $lists, $assetDir, '/var/db/xray-routing-lists');
