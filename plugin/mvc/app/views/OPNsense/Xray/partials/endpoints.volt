@@ -55,7 +55,7 @@ $(function () {
     function initializeGrid() {
         if (!gridReady) {
             gridReady = $.Deferred();
-            grid = grid.UIBootgrid({datakey:'id',options:{ajax:false, selection:true, multiSelect:true, rowCount:[10,25,-1], formatters:{health:function(column,row){return healthBadge(row);},enabled:function(column,row){return '<button type="button" class="btn btn-default btn-xs epToggle" data-id="'+row.id+'" data-enabled="'+(row.enabled?'0':'1')+'"><i class="fa fa-'+(row.enabled?'check-square-o':'square-o')+'"></i></button>';},text:function(column,row){return $('<div>').text(row[column.id]).html();}}}});
+            grid = grid.UIBootgrid({datakey:'id',options:{ajax:false, selection:true, multiSelect:true, rowCount:[20,50,-1], formatters:{health:function(column,row){return healthBadge(row);},enabled:function(column,row){return '<button type="button" class="btn btn-default btn-xs epToggle" data-id="'+row.id+'" data-enabled="'+(row.enabled?'0':'1')+'"><i class="fa fa-'+(row.enabled?'check-square-o':'square-o')+'"></i></button>';},text:function(column,row){return $('<div>').text(row[column.id]).html();}}}});
             grid.data('UIBootgrid').getTable().on('tableBuilt', function () { gridReady.resolve(); });
             grid.on('selected.rs.jquery.bootgrid deselected.rs.jquery.bootgrid', function () {
                 $('#epRemove').prop('disabled', !selected().length);

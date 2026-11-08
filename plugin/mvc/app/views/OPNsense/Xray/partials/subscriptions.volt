@@ -40,7 +40,7 @@ $(function(){
  function load(){
   if(!ready){
    ready=$.Deferred();
-   grid=grid.UIBootgrid({datakey:'id',options:{ajax:false,rowCount:[10,25,-1],formatters:{
+   grid=grid.UIBootgrid({datakey:'id',options:{ajax:false,rowCount:[20,50,-1],formatters:{
     text:function(c,r){return text(r[c.id]);},flag:function(c,r){return '<i class="fa fa-'+(r[c.id]?'check-square-o':'square-o')+'"></i>';},
     time:function(c,r){return r[c.id]?text(new Date(Number(r[c.id])*1000).toLocaleString()):'—';},
     commands:function(c,r){return '<div class="btn-group"><button type="button" class="btn btn-default btn-xs subEdit" data-id="'+r.id+'" title="{{ xlang._("Edit") }}"><i class="fa fa-pencil"></i></button><button type="button" class="btn btn-default btn-xs subRefresh" data-id="'+r.id+'" title="{{ xlang._("Update subscription") }}"><i class="fa fa-download"></i></button><button type="button" class="btn btn-default btn-xs subDelete" data-id="'+r.id+'" title="{{ xlang._("Delete") }}"><i class="fa fa-trash"></i></button></div>';}
