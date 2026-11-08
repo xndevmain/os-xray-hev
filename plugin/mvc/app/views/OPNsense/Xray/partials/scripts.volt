@@ -522,18 +522,21 @@
         });
 
         // Sidebar links can change the hash without reloading this page.
-        function showMainTab() {
-            var hash = window.location.hash || '#general';
-            $('#maintabs a').filter(function () {
+        function showMainTab(useDefault) {
+            var hash = window.location.hash;
+            if (!hash && useDefault) hash = '#general';
+            if (!hash) return;
+            var link = $('#maintabs a').filter(function () {
                 return this.getAttribute('href') === hash;
-            }).tab('show');
+            });
+            if (link.length) link.tab('show');
         }
-        $(window).on('hashchange', showMainTab);
+        $(window).on('hashchange', function () { showMainTab(false); });
         $('#maintabs a').on('shown.bs.tab', function (e) {
             if (window.location.hash !== e.target.hash) {
                 history.replaceState(null, null, e.target.hash);
             }
         });
-        showMainTab();
+        showMainTab(true);
     });
 </script>

@@ -66,7 +66,7 @@ $(function(){
  function load(){
   if(!ready){
    ready=$.Deferred();
-   grid=grid.UIBootgrid({datakey:'uuid',options:{ajax:false,rowCount:[10,25,-1],formatters:{
+   grid=grid.UIBootgrid({datakey:'uuid',options:{ajax:false,rowCount:[20,50,-1],formatters:{
     text:function(c,r){return text(r[c.id]);},
     kind:function(c,r){return text(r[c.id]==='domain'?'{{ xlang._('Domain') }}':'{{ xlang._('IP') }}');},
     flag:function(c,r){return '<i class="fa fa-'+(String(r[c.id])==='1'?'check-square-o':'square-o')+'"></i>';},
