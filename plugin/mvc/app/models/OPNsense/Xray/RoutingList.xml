@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<model>
+    <mount>//OPNsense/xray/routinglists</mount>
+    <description>Xray downloadable routing lists</description>
+    <version>1.0.0</version>
+    <items>
+        <list type="ArrayField">
+            <enabled type="BooleanField"><Default>1</Default><Required>Y</Required></enabled>
+            <name type="TextField"><Required>Y</Required></name>
+            <preset type="OptionField">
+                <Default>custom</Default><Required>Y</Required>
+                <OptionValues>
+                    <custom>Custom</custom>
+                    <discord_voice>Discord voice</discord_voice>
+                </OptionValues>
+            </preset>
+            <urls type="TextField"><Required>N</Required></urls>
+            <networks type="TextField"><Required>N</Required></networks>
+            <ports type="TextField"><Required>N</Required></ports>
+            <refresh type="IntegerField">
+                <Default>1440</Default><MinimumValue>30</MinimumValue><MaximumValue>10080</MaximumValue><Required>Y</Required>
+            </refresh>
+        </list>
+    </items>
+</model>

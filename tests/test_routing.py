@@ -76,6 +76,36 @@ class RoutingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             networks({'test': [(3, 1)]}, 'test')
 
+    def test_static_ip_lists_are_normalized_and_validated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            routes = routing.load_routes({'asset_dir': directory, 'routes': [{
+                'table': 'XRAY_0123456789ab', 'geosite': '', 'geoip': '',
+                'custom_domains': '', 'custom_hosts': '',
+                'static_ips': ['192.0.2.7', '198.51.100.42/24', '2001:db8::5/32'],
+            }]})
+            self.assertEqual(routes['XRAY_0123456789ab'][1], [
+                '192.0.2.7/32', '198.51.100.0/24', '2001:db8::/32'])
+            with self.assertRaises(ValueError):
+                routing.load_routes({'asset_dir': directory, 'routes': [{
+                    'table': 'XRAY_0123456789ab', 'geosite': '', 'geoip': '',
+                    'custom_domains': '', 'custom_hosts': '', 'static_ips': ['not-an-ip'],
+                }]})
+
+    def test_static_content_change_invalidates_learned_addresses(self):
+        table = 'XRAY_0123456789ab'
+        with tempfile.TemporaryDirectory() as directory:
+            path = str(Path(directory) / 'state.sqlite')
+            runner = lambda *args, **kwargs: None
+            broker = routing.Broker({table: (self.matcher, ['198.51.100.0/24'])}, path, runner)
+            broker.publish({'name': 'exact.example', 'records': [['192.0.2.4', 300]]})
+            self.assertEqual(broker.db.execute('SELECT COUNT(*) FROM learned').fetchone()[0], 1)
+            broker.db.close()
+            broker = routing.Broker({table: (self.matcher, ['203.0.113.0/24'])}, path, runner)
+            try:
+                self.assertEqual(broker.db.execute('SELECT COUNT(*) FROM learned').fetchone()[0], 0)
+            finally:
+                broker.db.close()
+
     def test_pf_before_persist_and_restore(self):
         calls = []
         def runner(args, **kwargs):

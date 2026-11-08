@@ -1,3 +1,13 @@
+## 4.1.0-beta.1 — native downloadable IP routing lists
+
+- Add native CRUD for multiple IP routing entries in the Routing tab.
+- Combine up to 16 HTTPS plain-text IP/CIDR feeds plus inline networks per entry.
+- Create one stable plugin-managed external firewall alias per entry, with atomic cached refreshes and a 30-minute scheduler.
+- Add a Discord voice preset with Cloudflare edge, Discord legacy and observed GCP fallback ranges plus scoped UDP port metadata.
+- Add an idempotent native LAN-rule helper that creates one UDP rule per configured port range while leaving rules user-owned and editable.
+- Validate downloads through the hardened HTTPS downloader and a bounded IP/CIDR parser; failed refreshes preserve the last working cache.
+- Extend routing broker signatures to invalidate learned data when static list content changes.
+
 ## 4.0.0-beta.1 — independent Hev/subscription fork
 
 Based on MrTheory/os-xray; original license and author attribution retained.

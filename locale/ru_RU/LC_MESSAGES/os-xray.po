@@ -407,3 +407,84 @@ msgstr "Остановить туннель"
 
 msgid "Restart the tunnel"
 msgstr "Перезапустить туннель"
+
+msgid "Downloaded IP routing lists"
+msgstr "Загружаемые списки IP-маршрутизации"
+
+msgid "Sources"
+msgstr "Источники"
+
+msgid "Firewall alias"
+msgstr "Алиас firewall"
+
+msgid "Entries"
+msgstr "Записи"
+
+msgid "UDP ports"
+msgstr "UDP-порты"
+
+msgid "Updated"
+msgstr "Обновлён"
+
+msgid "No downloaded IP lists configured."
+msgstr "Загружаемые IP-списки не настроены."
+
+msgid "Add IP list"
+msgstr "Добавить IP-список"
+
+msgid "Download and apply all"
+msgstr "Загрузить и применить все"
+
+msgid "Each entry may combine several HTTPS text lists and inline IP/CIDR networks. The plugin creates one native external alias per entry; firewall rules remain visible and editable in the normal OPNsense UI."
+msgstr "Одна запись может объединять несколько текстовых HTTPS-списков и встроенные сети IP/CIDR. Плагин создаёт для каждой записи нативный внешний алиас; правила остаются видимыми и редактируемыми в обычном интерфейсе OPNsense."
+
+msgid "IP routing list"
+msgstr "Список IP-маршрутизации"
+
+msgid "Preset"
+msgstr "Предустановка"
+
+msgid "Custom"
+msgstr "Свой"
+
+msgid "Discord voice"
+msgstr "Голос Discord"
+
+msgid "HTTPS list URLs"
+msgstr "HTTPS-адреса списков"
+
+msgid "One plain-text IP/CIDR list URL per line; up to 16 sources are combined."
+msgstr "По одному URL текстового списка IP/CIDR на строку; объединяется до 16 источников."
+
+msgid "Inline IP/CIDR networks"
+msgstr "Встроенные сети IP/CIDR"
+
+msgid "Destination UDP ports"
+msgstr "UDP-порты назначения"
+
+msgid "Optional rule-helper metadata; one port or range such as 19294:19344 per line."
+msgstr "Необязательные данные для создания правила: один порт или диапазон вроде 19294:19344 на строку."
+
+msgid "Refresh interval (minutes)"
+msgstr "Интервал обновления (минуты)"
+
+msgid "IP list not found"
+msgstr "IP-список не найден"
+
+msgid "Saved. Download and apply the lists."
+msgstr "Сохранено. Загрузите и примените списки."
+
+msgid "Create firewall rule"
+msgstr "Создать правило firewall"
+
+msgid "Firewall rule saved. Review its order and apply it in Firewall Rules."
+msgstr "Правило firewall сохранено. Проверьте его порядок и примените изменения в Firewall Rules."
+
+msgid "Delete this routing list? Existing firewall rules are not removed."
+msgstr "Удалить этот список маршрутизации? Существующие правила firewall не удаляются."
+
+msgid "Deleted. Apply firewall lists to remove the managed alias."
+msgstr "Удалено. Примените списки firewall, чтобы убрать управляемый алиас."
+
+msgid "Downloading and applying IP lists..."
+msgstr "Загрузка и применение IP-списков..."

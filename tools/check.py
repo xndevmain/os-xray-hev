@@ -33,7 +33,7 @@ for path in (root / 'plugin').rglob('*.volt'):
         run('node', '--check', str(target))
 if shutil.which('sh'):
     run('sh', '-n', 'install.sh')
-for test in ['config', 'subscription', 'catalog', 'download', 'subscription_refresh', 'geodata_releases']:
+for test in ['config', 'subscription', 'catalog', 'download', 'ip_lists', 'subscription_refresh', 'geodata_releases']:
     run(args.php, 'tests/' + test + '.php')
 run(sys.executable, '-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_*.py')
 print('All portable checks passed')

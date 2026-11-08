@@ -75,6 +75,7 @@ function xray_cron(): array
     return [
         ['autocron' => ['/usr/local/sbin/configctl xray watchdog', '*']],
         ['autocron' => ['/usr/local/opnsense/scripts/Xray/update-lists.php', '23', '4']],
+        ['autocron' => ['/usr/local/opnsense/scripts/Xray/update-ip-lists.php', '*/30']],
         ['autocron' => ['/usr/local/opnsense/scripts/Xray/subscriptions.php auto', '*/5']],
     ];
 }
