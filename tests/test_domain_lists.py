@@ -92,6 +92,9 @@ Example.COM.
         self.assertIn('configuration history backup', controller)
         self.assertIn('DELETE FROM learned WHERE alias NOT IN', broker)
         self.assertIn('DELETE FROM revisions WHERE alias NOT IN', broker)
+        routing_control = (ROOT / 'plugin/scripts/Xray/xray-routing-control.php').read_text(encoding='utf-8')
+        self.assertIn('$staleToKill', routing_control)
+        self.assertIn("-T kill", routing_control)
         # Deletion must not invoke configd while holding the OPNsense config
         # lock. First remove the active route while its helper rule keeps the
         # alias safely empty, then remove owned rules and apply again.

@@ -57,6 +57,7 @@ $callbackChanged = false;
 $activeChanged = false;
 $databaseBackup = null;
 $staleToFlush = [];
+$staleToKill = [];
 try {
     if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) throw new RuntimeException('Routing control is busy');
     $oldConfig = is_file(ROUTING_CONFIG) ? file_get_contents(ROUTING_CONFIG) : null;
@@ -122,6 +123,7 @@ try {
                 if (isset($aliasKeys[$name]) && $model->aliases->alias->del($aliasKeys[$name])) $changed = true;
             }
             $staleToFlush = $cleanup['flush'];
+            $staleToKill = $cleanup['delete'];
             foreach ($model->performValidation() as $error) throw new RuntimeException((string)$error);
             if ($changed) {
                 $model->serializeToConfig();
@@ -184,7 +186,15 @@ try {
         if (!rename($pending, ROUTING_CONFIG)) throw new RuntimeException('Cannot activate routing config');
         exec('/usr/local/etc/rc.filter_configure 2>&1', $filterOutput, $filterRc);
         if ($filterRc !== 0) throw new RuntimeException('Firewall reload failed: ' . implode(' ', $filterOutput));
+        foreach ($staleToKill as $table) {
+            $killOutput = [];
+            exec('/sbin/pfctl -t ' . escapeshellarg($table) . ' -T kill 2>&1', $killOutput, $killRc);
+            if ($killRc !== 0 && !xray_is_missing_table_error($killRc, implode("\n", $killOutput))) {
+                throw new RuntimeException('Cannot remove stale managed alias table: ' . $table);
+            }
+        }
         foreach ($staleToFlush as $table) {
+            $flushOutput = [];
             exec('/sbin/pfctl -t ' . escapeshellarg($table) . ' -T flush 2>&1', $flushOutput, $flushRc);
             if ($flushRc !== 0 && !xray_is_missing_table_error($flushRc, implode("\n", $flushOutput))) {
                 throw new RuntimeException('Cannot empty stale managed alias: ' . $table);
